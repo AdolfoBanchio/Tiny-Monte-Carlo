@@ -1,3 +1,4 @@
 headless
 head
 *.o
+*.txt
