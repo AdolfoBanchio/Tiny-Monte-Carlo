@@ -2,10 +2,10 @@
 CC = gcc
 
 # Flags
-CFLAGS = -std=c11 -Wall -Wextra 
-CFLAGSOPT = -std=c11 -Wall -Wextra -O3 -march=native
+CFLAGS = -std=c11 -Wall -Wextra
+CFLAGSOPT = -std=c11 -Wall -Wextra -O3 
 TINY_LDFLAGS = -lm
-CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
+CG_LDFLAGS = -lm -lglfw3 -lGL -lGLEW
 
 TARGETS = headless head
 
@@ -13,10 +13,10 @@ TARGETS = headless head
 C_SOURCES = wtime.c photon.c
 C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 
-headless: tiny_mc.o $(C_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(TINY_LDFLAGS)
+%.o: %.c
+	$(CC) $(CFLAGSOPT) -c $< -o $@
 
-headlessopt: tiny_mc.o $(C_OBJS)
+headless: tiny_mc.o $(C_OBJS)
 	$(CC) $(CFLAGSOPT) -o $@ $^ $(TINY_LDFLAGS)
 
 head: cg_mc.o $(C_OBJS)
