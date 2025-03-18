@@ -2,3 +2,4 @@ headless
 head
 *.o
 *.txt
+*.asm
