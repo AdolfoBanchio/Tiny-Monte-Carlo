@@ -3,7 +3,7 @@ CC = gcc
 
 # Flags
 CFLAGS = -std=c11 -Wall -Wextra
-CFLAGSOPT = -std=c11 -Wall -Wextra -O3 
+CFLAGSOPT = -std=c11 -Wall -Wextra -O3 -march=native
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw3 -lGL -lGLEW
 
