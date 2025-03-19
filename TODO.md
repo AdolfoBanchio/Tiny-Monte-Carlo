@@ -71,14 +71,13 @@ Optimizaciones a realizar:
     - Dentro de la funcion utilizamos 3 llamados a funciones `rand()`, `logf()` y `sqrtf()`. TODO: Buscar si existen versiones mas optimizadas y medir el rendimiento.
     - Particularmente `rand()` se llama 4 veces por cada fotón, una independiente y las demas sujeta a condiciones. Se busca mejorar la performance de esta funcion.
 
-- Memoria: pensar en mejorar la performance del sistema de memoria y cache. Teniendo en cuenta que el codigo trabaja sobre un arreglo de fotones y 2 arreglos de las `shells`.
+- Memoria: pensar en mejorar la performance del sistema de memoria y cache. Teniendo en cuenta que el codigo trabaja sobre 2 arreglos de las `shells`.
 
 ## Casos de estudio
 
-1. Base: Implementación original
-2. Optimización 2: algoritmica y de memoria (loop unrolling, cache-aware)
-3. Optimizacion 3: opt 2 + mejora en usos de librerias (rand, log, sqrt)
-4. Optimizacion 4: opt 3 + flags de compilacion O3 y Ofast
+1. Caso 0: Implementación original
+2. Caso 1: optimizacion del compilador (gcc) con flags de optimización O3 y Ofast
+3. Caso 2: caso 1 + mejora de usos de librerias y algoritmica en `photon.c`
 
 Mediciones a tener en cuenta:
 
