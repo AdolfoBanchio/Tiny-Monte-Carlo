@@ -53,7 +53,7 @@ Cosas que si o si tienen que estar.
         Explicación y mediciones que validen la explicación.
         Intentar medir las causas además de la performance.
 
-## Casos de estudios
+## TODO
 
 Metrica de performance del problema:
 
@@ -72,3 +72,15 @@ Optimizaciones a realizar:
     - Particularmente `rand()` se llama 4 veces por cada fotón, una independiente y las demas sujeta a condiciones. Se busca mejorar la performance de esta funcion.
 
 - Memoria: pensar en mejorar la performance del sistema de memoria y cache. Teniendo en cuenta que el codigo trabaja sobre un arreglo de fotones y 2 arreglos de las `shells`.
+
+## Casos de estudio
+
+1. Base: Implementación original
+2. Optimización 2: algoritmica y de memoria (loop unrolling, cache-aware)
+3. Optimizacion 3: opt 2 + mejora en usos de librerias (rand, log, sqrt)
+4. Optimizacion 4: opt 3 + flags de compilacion O3 y Ofast
+
+Mediciones a tener en cuenta:
+
+- Tamaño del problema vs performance (#fotones vs fotones/s)
+  - Diferentes tamaños del problema implica intentar llevar la performance fuera de la cache y medir el impacto en la performance.
