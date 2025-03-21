@@ -12,18 +12,20 @@ import matplotlib.pyplot as plt
 import re
 import subprocess
 import csv
+import platform 
 
 class TinyMcRuner:
-    def __init__(self, case, n, compiler="gcc"):
+    def __init__(self, case, n, compiler="gcc", photons=32):
         self.case = case
         self.exe = f"./{case}"
         self.runs = n
         self.compiler = compiler
-        self.makefile_rule = f"make CC={compiler} {case}"
-        self.outfile = f"./results/{case}_{compiler}.txt"
+        self.outfile = f"./results/{case}_{compiler}_{photons}k.txt"
+        self.photons = photons
+
     def compile(self):
         subprocess.run(["make", "clean"], check=True)
-        subprocess.run(["make", f"CC={self.compiler}", self.case], check=True)
+        subprocess.run(["make", f"CC={self.compiler}", self.case, f"PHOTONS={self.photons*1024}"], check=True)
     
     def run(self):
         with open(self.outfile, "w") as outfile:
@@ -83,7 +85,10 @@ class TinyMcRuner:
             }
             results.append(res)
         # crear csv
-        with open(f"./results/{self.case}_{self.compiler}.csv", "w", newline="") as f:
+
+        # extraer nombre del dispositivo donde se ejecuto
+        device = platform.node()
+        with open(f"./results/{self.case}_{self.compiler}_{device}_{self.photons}K.csv", "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
             writer.writeheader()
             writer.writerows(results)
@@ -93,19 +98,21 @@ class TinyMcRuner:
 
 for i in range(0,3):
     for c in ["gcc", "clang"]:
-        case = f"case_{i}"
-        runner = TinyMcRuner(case, 10, compiler=c)
-        runner.compile()
-        runner.run()
-        runner.save_results()
+        for f in [32, 128, 512]:
+            case = f"case_{i}"
+            runner = TinyMcRuner(case, 30, compiler=c, photons=f)
+            runner.compile()
+            runner.run()
+            runner.save_results()
 
-        # TODO: generar grafico
-        data = []
-        with open(f"./results/{case}_{c}.csv", "r") as f:
-            for line in f:
-                if "photons" in line:
-                    continue
-                data.append(list(map(float, line.split(","))))
+            # TODO: generar grafico
+            data = []
+            device = platform.node()
+            with open(f"./results/{case}_{c}_{device}_{f}K.csv", "r") as f:
+                for line in f:
+                    if "photons" in line:
+                        continue
+                    data.append(list(map(float, line.split(","))))
 
-        data = list(zip(*data))
-        plt.plot(data[0], data[2], label=case)
+            data = list(zip(*data))
+            plt.plot(data[0], data[2], label=case)

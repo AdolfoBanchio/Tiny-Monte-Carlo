@@ -3,3 +3,6 @@ head
 *.o
 *.txt
 *.asm
+case_0
+case_1
+case_2

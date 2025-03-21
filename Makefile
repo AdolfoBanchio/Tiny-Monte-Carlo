@@ -1,10 +1,11 @@
 # Compilers
 CC = gcc
+PHOTONS ?= 32768
 
 # Flags
-CFLAGS_0 = -std=c11 -Wall -Wextra
-CFLAGS_1 = -std=c11 -Wall -Wextra -USE_OPT
-CFLAGS_2 = -std=c11 -Wall -Wextra -O3 -march=native -USE_OPT
+CFLAGS_0 = -std=c11 -Wall -Wextra -DPHOTONS=$(PHOTONS)
+CFLAGS_1 = -std=c11 -Wall -Wextra -USE_OPT -DPHOTONS=$(PHOTONS)
+CFLAGS_2 = -std=c11 -Wall -Wextra -O3 -march=native -USE_OPT -DPHOTONS=$(PHOTONS)
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
 
@@ -18,10 +19,12 @@ C_OBJS12 = $(patsubst %.c, %.o, $(C_SOURCES12))
 
 
 #Caso 0: sin modificaciones
+case_0: CFLAGS = $(CFLAGS_0)
 case_0: tiny_mc.o $(C_OBJS)
 	$(CC) $(CFLAGS_0) -o $@ $^ $(TINY_LDFLAGS)
 
 #Caso 1: optimizaciones del código
+case_1: CFLAGS = $(CFLAGS_1)
 case_1: tiny_mc.o $(C_OBJS12)
 	$(CC) $(CFLAGS_1) -o $@ $^ $(TINY_LDFLAGS) 
 
