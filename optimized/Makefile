@@ -9,7 +9,7 @@ CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
 TARGETS = headless head opt
 
 # Files
-C_SOURCES = wtime.c photon.c SFMT.c
+C_SOURCES = wtime.c photon.c SFMT.c pcg_basic.c
 C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 
 headless: tiny_mc.o $(C_OBJS)
@@ -21,3 +21,4 @@ head: cg_mc.o $(C_OBJS)
 clean:
 	rm -f $(TARGETS) *.o
 
+	
