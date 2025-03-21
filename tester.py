@@ -11,6 +11,7 @@ import os
 import matplotlib.pyplot as plt
 import re
 import subprocess
+import csv
 
 class TinyMcRuner:
     def __init__(self, case, n, compiler="gcc"):
@@ -21,17 +22,19 @@ class TinyMcRuner:
         self.makefile_rule = f"make CC={compiler} {case}"
         self.outfile = f"./results/{case}_{compiler}.txt"
     def compile(self):
-        os.system("make clean")
-        os.system(self.makefile_rule)
+        subprocess.run(["make", "clean"], check=True)
+        subprocess.run(["make", f"CC={self.compiler}", self.case], check=True)
     
     def run(self):
         with open(self.outfile, "w") as outfile:
-            # Run command and capture stderr (perf stat output)
-            process = subprocess.run(
-                ["sudo", "perf", "stat", "-r", str(self.runs), self.exe],
-                stdout=outfile, stderr=subprocess.PIPE, text=True
-            )
-        print(process.stderr)
+            try:
+                process = subprocess.run(
+                    ["sudo", "perf", "stat", "-r", str(self.runs), self.exe],
+                    stdout=outfile, stderr=subprocess.PIPE, text=True, check=True
+                )
+                print(process.stderr)
+            except subprocess.CalledProcessError as e:
+                print(f"Error executing perf: {e}")
 
     def save_results(self):
         """  
@@ -80,10 +83,10 @@ class TinyMcRuner:
             }
             results.append(res)
         # crear csv
-        with open(f"./results/{self.case}_{self.compiler}.csv", "w") as f:
-            f.write("photons,time,photons_per_second\n")
-            for res in results:
-                f.write(f"{res['photons']},{res['time']},{res['photons_per_second']}\n")
+        with open(f"./results/{self.case}_{self.compiler}.csv", "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
+            writer.writeheader()
+            writer.writerows(results)
 
 
 # caso 0 
