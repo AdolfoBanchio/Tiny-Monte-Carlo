@@ -2,12 +2,10 @@
 #include <stdlib.h>
 
 #include "params.h"
-#include "SFMT.h"
 #include "pcg_basic.h"
 
 const float albedo = MU_S / (MU_S + MU_A);
 const float shells_per_mfp = 1e4 / MICRONS_PER_SHELL / (MU_A + MU_S);
-sfmt_t sfmt;
 
 void photon(float* heats, float* heats_squared)
 {
@@ -20,7 +18,6 @@ void photon(float* heats, float* heats_squared)
     float w = 1.0f;
     float weight = 1.0f;
     
-    //sfmt_init_gen_rand(&sfmt, SEED); 
     for (;;) {
         float t = -logf(pcg32_boundedrand(RAND_MAX)/ (float)RAND_MAX); /* move */
         x += t * u;

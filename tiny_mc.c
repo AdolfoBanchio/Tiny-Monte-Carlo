@@ -8,7 +8,13 @@
 #define _XOPEN_SOURCE 500 // M_PI
 
 #include "params.h"
-#include "photon.h"
+
+#ifdef USE_OPT
+    #include "photon_opt.h"
+#else
+    #include "photon.h"
+#endif
+
 #include "wtime.h"
 
 #include <assert.h>
