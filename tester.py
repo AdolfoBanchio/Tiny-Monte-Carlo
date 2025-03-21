@@ -12,19 +12,20 @@ import matplotlib.pyplot as plt
 import re
 import subprocess
 
-class TinyMcTester:
-    def __init__(self, case, n):
+class TinyMcRuner:
+    def __init__(self, case, n, compiler="gcc"):
         self.case = case
-        self.makefile_rule = f"make {case}"
         self.exe = f"./{case}"
         self.runs = n
-
+        self.compiler = compiler
+        self.makefile_rule = f"make CC={compiler} {case}"
+        self.outfile = f"./results/{case}_{compiler}.txt"
     def compile(self):
         os.system("make clean")
         os.system(self.makefile_rule)
     
     def run(self):
-        with open(f"{self.case}.txt", "w") as outfile:
+        with open(self.outfile, "w") as outfile:
             # Run command and capture stderr (perf stat output)
             process = subprocess.run(
                 ["sudo", "perf", "stat", "-r", str(self.runs), self.exe],
@@ -54,7 +55,7 @@ class TinyMcTester:
             - tiempo de ejecucion
             - cantidad de fotones por segundo
         """
-        with open(f"{self.case}.txt", "r") as f:
+        with open(self.outfile, "r") as f:
                     data = f.read()
 
         # separar los datos con la linea "# extra"
@@ -79,7 +80,7 @@ class TinyMcTester:
             }
             results.append(res)
         # crear csv
-        with open(f"{self.case}.csv", "w") as f:
+        with open(f"./results/{self.case}_{self.compiler}.csv", "w") as f:
             f.write("photons,time,photons_per_second\n")
             for res in results:
                 f.write(f"{res['photons']},{res['time']},{res['photons_per_second']}\n")
@@ -87,7 +88,21 @@ class TinyMcTester:
 
 # caso 0 
 
-tester = TinyMcTester("caso0", 10)
-tester.compile()
-tester.run()
-tester.save_results()
+for i in range(0,3):
+    for c in ["gcc", "clang"]:
+        case = f"case_{i}"
+        runner = TinyMcRuner(case, 10, compiler=c)
+        runner.compile()
+        runner.run()
+        runner.save_results()
+
+        # TODO: generar grafico
+        data = []
+        with open(f"./results/{case}_{c}.csv", "r") as f:
+            for line in f:
+                if "photons" in line:
+                    continue
+                data.append(list(map(float, line.split(","))))
+
+        data = list(zip(*data))
+        plt.plot(data[0], data[2], label=case)
