@@ -97,7 +97,7 @@ class TinyMcRuner:
 # caso 0 
 
 for i in range(0,3):
-    for c in ["gcc", "clang"]:
+    for c in ["gcc", "clang", "icx"]:
         for f in [32, 128, 512]:
             case = f"case_{i}"
             runner = TinyMcRuner(case, 30, compiler=c, photons=f)
