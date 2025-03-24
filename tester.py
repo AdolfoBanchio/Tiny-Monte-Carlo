@@ -31,7 +31,7 @@ class TinyMcRuner:
         with open(self.outfile, "w") as outfile:
             try:
                 process = subprocess.run(
-                    ["sudo", "perf", "stat", "-r", str(self.runs), self.exe],
+                    ["perf", "stat", "-r", str(self.runs), self.exe],
                     stdout=outfile, stderr=subprocess.PIPE, text=True, check=True
                 )
                 print(process.stderr)
