@@ -25,16 +25,16 @@ for file in files:
 
 
 for case in ['0', '1', '2']:
-    devices = list(cases[case]['gcc'].keys())
+    devices = list(cases[case]['gcc-14'].keys())
     devices.sort()
-    photons = [int(p) for p in (cases[case]['gcc'][devices[0]].keys())]
+    photons = [int(p) for p in (cases[case]['gcc-14'][devices[0]].keys())]
     photons.sort()
     gcc = []
     clang = []
     icx = []
     for device in devices:
-        gcc.append([float(cases[case]['gcc'][device][str(photon)][2]) for photon in photons])
-        clang.append([float(cases[case]['clang'][device][str(photon)][2]) for photon in photons])
+        gcc.append([float(cases[case]['gcc-14'][device][str(photon)][2]) for photon in photons])
+        clang.append([float(cases[case]['clang-19'][device][str(photon)][2]) for photon in photons])
         icx.append([float(cases[case]['icx'][device][str(photon)][2]) for photon in photons])
 
     x = np.arange(len(photons))
@@ -45,8 +45,8 @@ for case in ['0', '1', '2']:
     for i, device in enumerate(devices):
         fig, ax = plt.subplots(layout='tight')
         offset = width * multiplier
-        gcc_rects = ax.bar(x + offset, gcc[i], width, label='gcc')
-        clang_rects = ax.bar(x + offset + width, clang[i], width, label='clang')
+        gcc_rects = ax.bar(x + offset, gcc[i], width, label='gcc-14')
+        clang_rects = ax.bar(x + offset + width, clang[i], width, label='clang-19')
         icx_rects = ax.bar(x + offset + 2*width, icx[i], width, label='icx')
 
         ax.bar_label(gcc_rects)
