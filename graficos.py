@@ -31,9 +31,11 @@ for case in ['0', '1', '2']:
     photons.sort()
     gcc = []
     clang = []
+    icx = []
     for device in devices:
         gcc.append([float(cases[case]['gcc'][device][str(photon)][2]) for photon in photons])
         clang.append([float(cases[case]['clang'][device][str(photon)][2]) for photon in photons])
+        icx.append([float(cases[case]['icx'][device][str(photon)][2]) for photon in photons])
 
     x = np.arange(len(photons))
     width = 0.35
@@ -45,8 +47,11 @@ for case in ['0', '1', '2']:
         offset = width * multiplier
         gcc_rects = ax.bar(x + offset, gcc[i], width, label='gcc')
         clang_rects = ax.bar(x + offset + width, clang[i], width, label='clang')
+        icx_rects = ax.bar(x + offset + 2*width, icx[i], width, label='icx')
+
         ax.bar_label(gcc_rects)
         ax.bar_label(clang_rects)
+        ax.bar_label(icx_rects)
         multiplier += 1
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
