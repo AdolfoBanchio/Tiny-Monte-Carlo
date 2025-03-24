@@ -57,7 +57,7 @@ for case in ['0', '1', '2']:
         # Add some text for labels, title and custom x-axis tick labels, etc.
         ax.set_ylabel('Velocidad [k fotones/s]')
         ax.set_xlabel('Fotones [K]')
-        ax.set_title(f'Rendimiento caso 0 ({device})')
+        ax.set_title(f'Rendimiento caso {case} ({device})')
         ax.set_xticks(x + width, photons)
         ax.legend(loc='lower right', bbox_to_anchor=(1, 1))
         fig.tight_layout()
