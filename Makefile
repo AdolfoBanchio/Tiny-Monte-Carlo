@@ -3,8 +3,8 @@ CC = gcc
 PHOTONS ?= 32768
 
 # Flags
-CFLAGS_0 = -std=c11 -Wall -Wextra -DPHOTONS=$(PHOTONS)
-CFLAGS_1 = -std=c11 -Wall -Wextra -USE_OPT -DPHOTONS=$(PHOTONS)
+CFLAGS_0 = -std=c11 -Wall -Wextra -O0 -DPHOTONS=$(PHOTONS)
+CFLAGS_1 = -std=c11 -Wall -Wextra -O0 -USE_OPT -DPHOTONS=$(PHOTONS)
 CFLAGS_2 = -std=c11 -Wall -Wextra -O3 -march=native -USE_OPT -DPHOTONS=$(PHOTONS)
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW

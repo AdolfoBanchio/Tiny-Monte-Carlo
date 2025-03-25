@@ -22,6 +22,10 @@ class TinyMcRuner:
         self.compiler = compiler
         self.outfile = f"./results/{case}_{compiler}_{photons}k.txt"
         self.photons = photons
+        if "adolfo" in platform.node():
+            self.device = "local-pc"
+        else:
+            self.device = platform.node()
 
     def compile(self):
         subprocess.run(["make", "clean"], check=True)
@@ -87,8 +91,7 @@ class TinyMcRuner:
         # crear csv
 
         # extraer nombre del dispositivo donde se ejecuto
-        device = platform.node()
-        with open(f"./results/{self.case}_{self.compiler}_{device}_{self.photons}K.csv", "w", newline="") as f:
+        with open(f"./results/{self.case}_{self.compiler}_{self.device}_{self.photons}K.csv", "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
             writer.writeheader()
             writer.writerows(results)
@@ -104,15 +107,3 @@ for i in range(0,3):
             runner.compile()
             runner.run()
             runner.save_results()
-
-            # TODO: generar grafico
-            data = []
-            device = platform.node()
-            with open(f"./results/{case}_{c}_{device}_{f}K.csv", "r") as f:
-                for line in f:
-                    if "photons" in line:
-                        continue
-                    data.append(list(map(float, line.split(","))))
-
-            data = list(zip(*data))
-            plt.plot(data[0], data[2], label=case)
