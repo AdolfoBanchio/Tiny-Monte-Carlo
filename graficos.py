@@ -38,27 +38,26 @@ for case in ['0', '1', '2']:
         icx.append([float(cases[case]['icx'][device][str(photon)][2]) for photon in photons])
 
     x = np.arange(len(photons))
-    width = 0.35
-    multiplier = 0
-
+    width = 0.3  # the width of the bars
+    group_spacing = 0.5  # spacing between groups of bars
 
     for i, device in enumerate(devices):
-        fig, ax = plt.subplots(layout='tight')
-        offset = width * multiplier
+        fig, ax = plt.subplots(figsize=(10, 6))
+        offset = i * (3 * width + group_spacing)  # Offset for each device group
         gcc_rects = ax.bar(x + offset, gcc[i], width, label='gcc-14')
         clang_rects = ax.bar(x + offset + width, clang[i], width, label='clang-19')
-        icx_rects = ax.bar(x + offset + 2*width, icx[i], width, label='icx')
+        icx_rects = ax.bar(x + offset + 2 * width, icx[i], width, label='icx')
 
         ax.bar_label(gcc_rects)
         ax.bar_label(clang_rects)
         ax.bar_label(icx_rects)
-        multiplier += 1
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
         ax.set_ylabel('Velocidad [k fotones/s]')
         ax.set_xlabel('Fotones [K]')
         ax.set_title(f'Rendimiento caso {case} ({device})')
-        ax.set_xticks(x + width, photons)
+        ax.set_xticks(x + offset + width)
+        ax.set_xticklabels(photons)
         ax.legend(loc='lower right', bbox_to_anchor=(1, 1))
         fig.tight_layout()
         plt.savefig(f'./graphics/case_{case}_{device}.png')
