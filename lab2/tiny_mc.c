@@ -10,7 +10,7 @@
 #include "params.h"
 
 #ifdef USE_OPT
-    #include "photon_opt.h"
+    #include "photon_vect.h"
 #else
     #include "photon.h"
 #endif
