@@ -4,8 +4,8 @@ PHOTONS ?= 32768
 
 # Flags
 CFLAGS_0 = -std=c11 -Wall -Wextra -O0 -DPHOTONS=$(PHOTONS)
-CFLAGS_1 = -std=c11 -Wall -Wextra -O0 -USE_OPT -DPHOTONS=$(PHOTONS)
-CFLAGS_2 = -std=c11 -Wall -Wextra -O3 -march=native -USE_OPT -DPHOTONS=$(PHOTONS)
+CFLAGS_1 = -std=c11 -Wall -Wextra -O0 -msse4.1 -USE_OPT -DPHOTONS=$(PHOTONS)
+CFLAGS_2 = -std=c11 -Wall -Wextra -O3 -msse4.1 -march=native -USE_OPT -DPHOTONS=$(PHOTONS)
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
 
@@ -13,7 +13,7 @@ TARGETS = case_0 case_1 case_2 head
 
 # Files
 C_SOURCES = wtime.c photon.c 
-C_SOURCES12 = wtime.c photon_opt.c pcg_basic.c
+C_SOURCES12 = wtime.c photon_vect.c pcg_basic.c
 C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 C_OBJS12 = $(patsubst %.c, %.o, $(C_SOURCES12))
 
