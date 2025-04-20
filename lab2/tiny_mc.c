@@ -50,7 +50,8 @@ int main(void)
     // start timer
     double start = wtime();
     // simulation
-    for (unsigned int i = 0; i < PHOTONS; ++i) {
+
+    for (unsigned int i = 0; i < PHOTONS; i+=16) {
         photon(heat, heat2);
     }
     // stop timer

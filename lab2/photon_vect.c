@@ -27,12 +27,12 @@ void photon(float* heats, float* heats_squared)
     float weight = 1.0f;
     float t;
     //vector <0,u,v,w>
-    __m128 vector_uvw = _mm_set_ps(0,0,0,0); //primer coordenada no me importa
+    __m128 vector_uvw = _mm_set_ps(0.0f,0.0f,0.0f,1.0f); //primer coordenada no me importa
     
     //vector <0,x,y,z>
-    __m128 vector_xyz = _mm_set_ps(0,0,0,0);
+    __m128 vector_xyz = _mm_set_ps(0.0f,0.0f,0.0f,0.0f);
     for (;;) {
-        t = -logf(pcg32_random() / (float)UINT32_MAX); /* move */
+        t = -logf(pcg32_random() / (float)UINT32_MAX); /* move */    //Modificar acá porque genera todos los lanes con el mismo valor t 
         //vector con <t,t,t,t>
         __m128 vector_t =  _mm_set_ps1(t);
         

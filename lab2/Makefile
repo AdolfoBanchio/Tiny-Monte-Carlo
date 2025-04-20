@@ -3,17 +3,17 @@ CC = gcc
 PHOTONS ?= 32768
 
 # Flags
-CFLAGS_0 = -std=c11 -Wall -Wextra -O0 -DPHOTONS=$(PHOTONS)
-CFLAGS_1 = -std=c11 -Wall -Wextra -O0 -msse4.1 -USE_OPT -DPHOTONS=$(PHOTONS)
-CFLAGS_2 = -std=c11 -Wall -Wextra -O3 -msse4.1 -march=native -USE_OPT -DPHOTONS=$(PHOTONS)
+CFLAGS_0 = -std=c11 -Wall -Wextra -O0 -march=native -DPHOTONS=$(PHOTONS)
+CFLAGS_1 = -std=c11 -Wall -Wextra -O1 -msse4.1 -march=native -USE_OPT -DPHOTONS=$(PHOTONS)
+CFLAGS_2 = -std=c11 -Wall -Wextra -O3 -msse4.1 -march=native -ftree-vectorize -ffast-math -USE_OPT -DPHOTONS=$(PHOTONS)
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
 
 TARGETS = case_0 case_1 case_2 head
 
 # Files
-C_SOURCES = wtime.c photon.c 
-C_SOURCES12 = wtime.c photon_vect.c pcg_basic.c
+C_SOURCES = wtime.c photon_vect_2.c  pcg_basic.c
+C_SOURCES12 = wtime.c photon_vect_2.c pcg_basic.c
 C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 C_OBJS12 = $(patsubst %.c, %.o, $(C_SOURCES12))
 
@@ -33,7 +33,8 @@ case_2: CFLAGS = $(CFLAGS_2)
 case_2: tiny_mc.o $(C_OBJS12)
 	$(CC) $(CFLAGS) -o $@ $^ $(TINY_LDFLAGS) 
 
-head: cg_mc.o $(C_OBJS)
+case_1: CFLAGS = $(CFLAGS_2)
+head: cg_mc.o $(C_OBJS12)
 	$(CC) $(CFLAGS) -o $@ $^ $(CG_LDFLAGS)
 
 clean:
