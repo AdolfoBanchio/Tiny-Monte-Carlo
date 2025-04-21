@@ -12,8 +12,8 @@ CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
 TARGETS = case_0 case_1 case_2 head
 
 # Files
-C_SOURCES = wtime.c photon_vect_2.c  pcg_basic.c
-C_SOURCES12 = wtime.c photon_vect_2.c pcg_basic.c
+C_SOURCES = wtime.c photon_vect.c  pcg_basic.c
+C_SOURCES12 = wtime.c photon_vect.c pcg_basic.c
 C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 C_OBJS12 = $(patsubst %.c, %.o, $(C_SOURCES12))
 
