@@ -3,16 +3,16 @@ CC = gcc
 PHOTONS ?= 524288
 
 # Flags
-CFLAGS_0 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -DPHOTONS=$(PHOTONS)
-CFLAGS_1 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -DUSE_OPT=1 -DPHOTONS=$(PHOTONS)
+CFLAGS_0 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -fopt-info-vec-all -DPHOTONS=$(PHOTONS)
+CFLAGS_1 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -fopt-info-vec -fopt-info-vec-missed -DUSE_OPT=1 -DPHOTONS=$(PHOTONS)
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
 
 TARGETS = case_* head_*
 
 # Files
-C_SOURCES = wtime.c photon_lab1.c  pcg_basic.c
-C_SOURCES1 = wtime.c photon_vect.c pcg_basic.c
+C_SOURCES = wtime.c photon_lab1.c 
+C_SOURCES1 = wtime.c photon_vect.c 
 C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 C_OBJS1 = $(patsubst %.c, %.o, $(C_SOURCES1))
 
