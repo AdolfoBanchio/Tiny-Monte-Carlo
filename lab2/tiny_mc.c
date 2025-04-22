@@ -5,15 +5,11 @@
  * Adaptado para CP2014, Nicolas Wolovick
  */
 
-#define _XOPEN_SOURCE 500 // M_PI
+ #define _XOPEN_SOURCE 500 // M_PI
 
 #include "params.h"
 
-#ifdef USE_OPT
-    #include "photon_vect.h"
-#else
-    #include "photon.h"
-#endif
+#include "photon.h"
 
 #include "wtime.h"
 
@@ -29,8 +25,8 @@ char t3[] = "CPU version, adapted for PEAGPGPU by Gustavo Castellano"
 
 
 // global state, heat and heat square in each shell
-static float heat[SHELLS];
-static float heat2[SHELLS];
+_Alignas(32) static float heat[SHELLS];
+_Alignas(32) static float heat2[SHELLS];
 
 
 /***
@@ -50,10 +46,15 @@ int main(void)
     // start timer
     double start = wtime();
     // simulation
-
+#ifdef USE_OPT
     for (unsigned int i = 0; i < PHOTONS; i+=8) {
         photon(heat, heat2);
     }
+#else
+    for (unsigned int i = 0; i < PHOTONS; i++) {
+        photon(heat, heat2);
+    }
+#endif
     // stop timer
     double end = wtime();
     assert(start <= end);

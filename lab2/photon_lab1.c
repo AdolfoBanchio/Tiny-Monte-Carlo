@@ -1,6 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
-
+#include "pcg_basic.h" // Add this include
 #include "params.h"
 
 const float albedo = MU_S / (MU_S + MU_A);
@@ -8,6 +8,10 @@ const float shells_per_mfp = 1e4 / MICRONS_PER_SHELL / (MU_A + MU_S);
 
 void photon(float* heats, float* heats_squared)
 {
+    /* Initialize PCG RNG */
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 42u, 54u); // Initialize with seed values
+
     /* launch */
     float x = 0.0f;
     float y = 0.0f;
@@ -18,7 +22,7 @@ void photon(float* heats, float* heats_squared)
     float weight = 1.0f;
     
     for (;;) {
-        float t = -logf(rand()/ (float)RAND_MAX); /* move */
+        float t = -logf(pcg32_random_r(&rng) / (float)UINT32_MAX); /* move */
         x += t * u;
         y += t * v;
         z += t * w;
@@ -34,8 +38,8 @@ void photon(float* heats, float* heats_squared)
         /* New direction, rejection method */
         float xi1, xi2;
         do {
-            xi1 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
-            xi2 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
+            xi1 = 2.0f * pcg32_random_r(&rng) / (float)UINT32_MAX - 1.0f;
+            xi2 = 2.0f * pcg32_random_r(&rng) / (float)UINT32_MAX - 1.0f;
             t = xi1 * xi1 + xi2 * xi2;
         } while (1.0f < t);
         u = 2.0f * t - 1.0f;
@@ -43,7 +47,7 @@ void photon(float* heats, float* heats_squared)
         w = xi2 * sqrtf((1.0f - u * u) / t);
 
         if (weight < 0.001f) { /* roulette */
-            if (rand() / (float)RAND_MAX > 0.1f)
+            if (pcg32_random_r(&rng) / (float)UINT32_MAX > 0.1f)
                 break;
             weight /= 0.1f;
         }
