@@ -47,7 +47,7 @@ void photon(float* heats, float* heats_squared)
     __m256i active_mask_i = _mm256_set1_epi32(-1);
     __m256 active_mask = _mm256_castsi256_ps(active_mask_i);// Inicialmente todos los fotones están activos
 
-    while (_mm256_movemask_ps(active_mask) != 0) { // Mientras haya fotones activos
+    while (_mm256_movemask_ps(active_mask) != 0x00) { // Mientras haya fotones activos
         // t = -log(rand)     
         float randf[8];
         for (int i = 0; i < 8; i++) randf[i] = -logf(pcg32_random() / (float)UINT32_MAX);
@@ -94,9 +94,9 @@ void photon(float* heats, float* heats_squared)
         _mm256_storeu_ps(deposit_arr, deposit);
         _mm256_storeu_ps(deposit_sq_arr, deposit_sq);
 
-        float active_arr[8];
-        _mm256_storeu_ps(active_arr, active_mask);
-
+        int active_arr[8];
+        _mm256_storeu_si256((__m256i*)active_arr, active_mask_i);
+          
         for (int i = 0; i < 8; i++) {  //sólo actualiza la shell para los fotones que están vivos. 
             if (active_arr[i] != 0) { // si el fotón está activo
                 // Actualizar heats y heats_squared
