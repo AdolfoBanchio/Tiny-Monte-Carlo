@@ -5,6 +5,8 @@
 #include <emmintrin.h> //add
 #include <smmintrin.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #include "params.h"
 #include "pcg_basic.h"
@@ -39,10 +41,10 @@ void photon(float* heats, float* heats_squared)
     __m256 roulette_factor = _mm256_set1_ps(10.0f);
     __m256 shells_per_mfp_v = _mm256_set1_ps(shells_per_mfp);
 
-    __mmask8 active_mask = 0xFF; // Inicialmente todos los fotones están activos
-    bool any_active = true;
+    __m256i active_mask_i = _mm256_set1_epi32(-1);
+    __m256 active_mask = _mm256_castsi256_ps(active_mask_i);// Inicialmente todos los fotones están activos
 
-    while (active_mask != 0) { // Mientras haya fotones activos
+    while (_mm256_movemask_ps(active_mask) != 0) { // Mientras haya fotones activos
         // t = -log(rand)     
         float randf[8];
         for (int i = 0; i < 8; i++) randf[i] = -logf(pcg32_random() / (float)UINT32_MAX);
@@ -68,13 +70,13 @@ void photon(float* heats, float* heats_squared)
         __m256 shell_f = _mm256_mul_ps(sqrt_dist, shells_per_mfp_v);
  
         // convierto a unsigned int para que no se pierda la parte entera
-        __m256i shell = _mm256_cvtps_epu32(shell_f);
+        __m256i shell = _mm256_cvtps_epi32(shell_f);
         
         // max_shell = vector con el valor máximo de shell
         __m256i max_shell = _mm256_set1_epi32(SHELLS - 1);
         
         // cada elemento de shell se queda con el valor mínimo entre shell y max_shell
-        shell = _mm256_min_epu32(shell, max_shell);
+        shell = _mm256_min_epi32(shell, max_shell);
 
         // Peso absorbido 
         __m256 deposit = _mm256_mul_ps(_mm256_sub_ps(one, albedo_v), weight);
@@ -82,15 +84,16 @@ void photon(float* heats, float* heats_squared)
 
         // Guardar resultados por shell (conversión a escalar porque heats[] no es vectorizable directamente) 
         uint32_t shell_arr[8];
-        float deposit_arr[8], deposit_sq_arr[8], active_arr[8];
-        _mm256_storeu_si256(shell_arr, shell);
+        float deposit_arr[8], deposit_sq_arr[8];
+        _mm256_storeu_si256((__m256i *)shell_arr, shell);
         _mm256_storeu_ps(deposit_arr, deposit);
         _mm256_storeu_ps(deposit_sq_arr, deposit_sq);
-        __m256 active_mask_ps = _mm256_castsi256_ps(_mm256_set1_epi32(active_mask));
-        _mm256_storeu_ps(active_arr, active_mask_ps);
+
+        float active_arr[8];
+        _mm256_storeu_ps(active_arr, active_mask);
 
         for (int i = 0; i < 8; i++) {  //sólo actualiza la shell para los fotones que están vivos. 
-            if (active_arr[i]) {
+            if (active_arr[i] != 0) { // si el fotón está activo
                 // Actualizar heats y heats_squared
                 heats[shell_arr[i]] += deposit_arr[i];
                 heats_squared[shell_arr[i]] += deposit_sq_arr[i];
@@ -100,35 +103,26 @@ void photon(float* heats, float* heats_squared)
         // Actualizar pesos 
         weight = _mm256_mul_ps(weight, albedo_v);
 
-        // Nueva dirección 
-        __m256 xi1, xi2, t_reject;
-        __mmask8 done_mask = 0;
-        xi1 = xi2 = t_reject = _mm256_setzero_ps();
-
-        while (done_mask != 0xFF) {  //done_mask == FF cuando todos los lanes cumplen q el t calculado para ese lane 1.0 > t 
-            float r1[8], r2[8];
-             for (int i = 0; i < 8; i++) {
-                r1[i] = 2.0f * (pcg32_random() / (float)RAND_MAX) - 1.0f;   
-                r2[i] = 2.0f * (pcg32_random() / (float)RAND_MAX) - 1.0f;
-            }
-
-            __m256 new_xi1 = _mm256_loadu_ps(r1); 
-            __m256 new_xi2 = _mm256_loadu_ps(r2);   
-            __m256 new_t = _mm256_add_ps(         
-                _mm256_mul_ps(new_xi1, new_xi1),
-                _mm256_mul_ps(new_xi2, new_xi2)
-            );
-
-            __mmask8 accept_mask = _mm256_cmp_ps_mask(new_t, one, _CMP_LE_OQ);
-            accept_mask = accept_mask & ~done_mask;
-
-            xi1 = _mm256_mask_blend_ps(accept_mask, xi1, new_xi1);
-            xi2 = _mm256_mask_blend_ps(accept_mask, xi2, new_xi2);
-            t_reject = _mm256_mask_blend_ps(accept_mask, t_reject, new_t);
-
-            done_mask |= accept_mask;
+        // Nueva dirección, proceso cada linea independientemente
+        // para asi evitar el uso de mascara e ejecucion de instrucciones 
+        // ineficientes en lineas ya terminadas.
+        float xi1_arr[8] = {0}, xi2_arr[8] = {0}, t_reject_arr[8] = {0};
+        // proceso cada foton
+        for (int i = 0; i < 8; i++) {
+            float xi1_local,xi2_local, t_local;
+            do{
+                xi1_local = 2.0f * (pcg32_random() / (float)UINT32_MAX) - 1.0f;
+                xi2_local = 2.0f * (pcg32_random() / (float)UINT32_MAX) - 1.0f;
+                t_local = xi1_local * xi1_local + xi2_local * xi2_local;
+            } while (1.0f < t_local);
+            xi1_arr[i] = xi1_local;
+            xi2_arr[i] = xi2_local;
+            t_reject_arr[i] = t_local;
         }
-
+        // Cargar los resultados en un vector
+        __m256 xi1 = _mm256_loadu_ps(xi1_arr);
+        __m256 xi2 = _mm256_loadu_ps(xi2_arr);
+        __m256 t_reject = _mm256_loadu_ps(t_reject_arr);
         // u = 2t - 1  
         u = _mm256_sub_ps(_mm256_mul_ps(two, t_reject), one);
 
@@ -143,23 +137,28 @@ void photon(float* heats, float* heats_squared)
 
         // Ruleta rusa
         // creo una mascara por los fotones que pasaron el umbral de peso
-        __mmask8 weight_trld_mask = _mm256_cmp_ps_mask(weight, weight_threshold, _CMP_LT_OQ);
-        
+        __m256 weight_trld_mask = _mm256_cmp_ps(weight, weight_threshold, _CMP_LT_OQ);
+        // en cada linea tengo 0xFFFFFFFF o 0
+
         // a los fotones que pasaron el umbral de peso, los someto a una ruleta rusa
         __m256 rand_ps = rand_vector_256();
         // mascara para los fotones que perdieron en la ruleta
-        __mmask8 roulette_mask = _mm256_cmp_ps_mask(rand_ps, roulette_chance, _CMP_GT_OQ);
-        
+        __m256 roulette_mask = _mm256_cmp_ps(rand_ps, roulette_chance, _CMP_GT_OQ);
+        // en cada linea tengo 0xFFFFFFFF o 0
+
         // si pasaron el umbral y perdieron en la ruleta, muere el foton
-        __mmask8 terminate_mask = weight_trld_mask & roulette_mask;
-        // ~terminate_mask, tendra 1 en los fotones que no murieron
-        // entonces si no murio y esta activo, se queda activo. cc muere
-        active_mask = active_mask & ~terminate_mask;
+        __m256 terminate_mask = _mm256_and_ps(weight_trld_mask, roulette_mask);
+        // se que tendre valores 0xFFFFFFFF o 0, debido a como cree las mascaras usadas
+
+        // si el foton muere, lo marco como inactivo. Puedo usar con seguirdad
+        // esta funcion debido a que conozco los posibles valores de terminate_mask
+        active_mask = _mm256_blendv_ps(active_mask, _mm256_setzero_ps(), terminate_mask);
 
         // actualizo peso de fotones que pasaron el umbral pero sobrevivieron a la ruleta
-        __mmask8 weight_survivers = weight_trld_mask & ~roulette_mask;
-        // weight_survivers, tendra 1 en los fotones que pasaron el umbral y sobrevivieron a la ruleta
+        __m256 weight_survivers = _mm256_andnot_ps(roulette_mask, weight_trld_mask);
+        
         // multiplico por roulette_factor a los que sobrevivieron a la ruleta
-        weight = _mm256_mask_mul_ps(weight, weight_survivers, weight, roulette_factor);
+        __m256 adjusted_weight = _mm256_mul_ps(weight, roulette_factor);
+        weight = _mm256_blendv_ps(weight, adjusted_weight, weight_survivers);
     }
 }
