@@ -9,7 +9,24 @@
 #include <stdio.h>
 
 #include "params.h"
-#include "pcg_basic.h"
+
+struct rng_state {    // Internals are *Private*.
+    uint64_t state;             // RNG state.  All values are possible.
+    uint64_t inc;               // Controls which RNG sequence (stream) is
+                                // selected. Must *always* be odd.
+};
+typedef struct rng_state pcg32_random_t;
+
+static pcg32_random_t rng_global = {0x853c49e6748fea9bULL, 0xda3e39cb94b95bdbULL};
+
+uint32_t pcg32_random(void)
+{
+    uint64_t oldstate = rng_global.state;
+    rng_global.state = oldstate * 6364136223846793005ULL + rng_global.inc;
+    uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
+    uint32_t rot = oldstate >> 59u;
+    return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
+}
 
 const float albedo = MU_S / (MU_S + MU_A);
 const float shells_per_mfp = 1e4 / MICRONS_PER_SHELL / (MU_A + MU_S);
