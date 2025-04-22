@@ -4,7 +4,7 @@ PHOTONS ?= 32768
 
 # Flags
 CFLAGS_0 = -std=c11 -Wall -Wextra -O0 -march=native -DPHOTONS=$(PHOTONS)
-CFLAGS_1 = -std=c11 -Wall -Wextra -O1 -msse4.1 -march=native -USE_OPT -DPHOTONS=$(PHOTONS)
+CFLAGS_1 = -std=c11 -Wall -Wextra -msse4.1 -USE_OPT -DPHOTONS=$(PHOTONS)
 CFLAGS_2 = -std=c11 -Wall -Wextra -O3 -msse4.1 -march=native -ftree-vectorize -ffast-math -USE_OPT -DPHOTONS=$(PHOTONS)
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
