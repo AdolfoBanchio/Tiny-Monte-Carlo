@@ -8,7 +8,7 @@ CFLAGS_1 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
 
-TARGETS = case_0 case_1 case_2 head
+TARGETS = case_* head_*
 
 # Files
 C_SOURCES = wtime.c photon_lab1.c  pcg_basic.c
