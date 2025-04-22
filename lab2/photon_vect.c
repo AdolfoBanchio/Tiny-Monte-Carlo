@@ -31,11 +31,14 @@ void photon(float* heats, float* heats_squared)
     __m256 u = _mm256_setzero_ps();
     __m256 v = _mm256_setzero_ps();
     __m256 w = _mm256_set1_ps(1.0f);
-    __m256 weight = _mm256_set1_ps(1.0f);
-    __m256 albedo_v = _mm256_set1_ps(albedo);
-
+    
     __m256 one = _mm256_set1_ps(1.0f);
     __m256 two = _mm256_set1_ps(2.0f);
+    
+    __m256 weight = _mm256_set1_ps(1.0f);
+    __m256 albedo_v = _mm256_set1_ps(albedo);
+    __m256 one_minus_albedo = _mm256_sub_ps(one, albedo_v);
+    
     __m256 weight_threshold = _mm256_set1_ps(0.001f);
     __m256 roulette_chance = _mm256_set1_ps(0.1f);
     __m256 roulette_factor = _mm256_set1_ps(10.0f);
@@ -58,12 +61,14 @@ void photon(float* heats, float* heats_squared)
         
         */
         // Movimiento  ok   
-        x = _mm256_add_ps(x, _mm256_mul_ps(t, u));
-        y = _mm256_add_ps(y, _mm256_mul_ps(t, v));
-        z = _mm256_add_ps(z, _mm256_mul_ps(t, w));
-
+        x = _mm256_fmadd_ps(t,u,x);
+        y = _mm256_fmadd_ps(t,v,y);
+        z = _mm256_fmadd_ps(t,w,z);
         // Absorción  ok 
-        __m256 dist2 = _mm256_fmadd_ps(x, x, _mm256_fmadd_ps(y, y, _mm256_mul_ps(z, z)));
+        __m256 x_squared = _mm256_mul_ps(x, x);
+        __m256 y_squared = _mm256_mul_ps(y, y);
+        __m256 z_squared = _mm256_mul_ps(z, z);
+        __m256 dist2 = _mm256_add_ps(x_squared, _mm256_add_ps(y_squared, z_squared));
         __m256 sqrt_dist = _mm256_sqrt_ps(dist2);
         
         //shell_f = sqrt_dist * shells_per_mfp_v
@@ -79,12 +84,12 @@ void photon(float* heats, float* heats_squared)
         shell = _mm256_min_epi32(shell, max_shell);
 
         // Peso absorbido 
-        __m256 deposit = _mm256_mul_ps(_mm256_sub_ps(one, albedo_v), weight);
+        __m256 deposit = _mm256_mul_ps(one_minus_albedo, weight);
         __m256 deposit_sq = _mm256_mul_ps(deposit, deposit);
 
         // Guardar resultados por shell (conversión a escalar porque heats[] no es vectorizable directamente) 
-        uint32_t shell_arr[8];
-        float deposit_arr[8], deposit_sq_arr[8];
+        _Alignas(32) int32_t shell_arr[8];
+        _Alignas(32) float deposit_arr[8], deposit_sq_arr[8];
         _mm256_storeu_si256((__m256i *)shell_arr, shell);
         _mm256_storeu_ps(deposit_arr, deposit);
         _mm256_storeu_ps(deposit_sq_arr, deposit_sq);
@@ -106,7 +111,7 @@ void photon(float* heats, float* heats_squared)
         // Nueva dirección, proceso cada linea independientemente
         // para asi evitar el uso de mascara e ejecucion de instrucciones 
         // ineficientes en lineas ya terminadas.
-        float xi1_arr[8] = {0}, xi2_arr[8] = {0}, t_reject_arr[8] = {0};
+        _Alignas(32) float xi1_arr[8] = {0}, xi2_arr[8] = {0}, t_reject_arr[8] = {0};
         // proceso cada foton
         for (int i = 0; i < 8; i++) {
             float xi1_local,xi2_local, t_local;
