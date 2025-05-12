@@ -10,6 +10,7 @@
 
 #include "params.h"
 
+#define M_PI		3.14159265358979323846	/* pi */
 struct rng_state {    // Internals are *Private*.
     uint64_t state;             // RNG state.  All values are possible.
     uint64_t inc;               // Controls which RNG sequence (stream) is
@@ -27,6 +28,39 @@ uint32_t pcg32_random(void)
     uint32_t rot = oldstate >> 59u;
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
+
+uint32_t pcg32_boundedrand(uint32_t bound)
+{
+    // To avoid bias, we need to make the range of the RNG a multiple of
+    // bound, which we do by dropping output less than a threshold.
+    // A naive scheme to calculate the threshold would be to do
+    //
+    //     uint32_t threshold = 0x100000000ull % bound;
+    //
+    // but 64-bit div/mod is slower than 32-bit div/mod (especially on
+    // 32-bit platforms).  In essence, we do
+    //
+    //     uint32_t threshold = (0x100000000ull-bound) % bound;
+    //
+    // because this version will calculate the same modulus, but the LHS
+    // value is less than 2^32.
+
+    uint32_t threshold = -bound % bound;
+
+    // Uniformity guarantees that this loop will terminate.  In practice, it
+    // should usually terminate quickly; on average (assuming all bounds are
+    // equally likely), 82.25% of the time, we can expect it to require just
+    // one iteration.  In the worst case, someone passes a bound of 2^31 + 1
+    // (i.e., 2147483649), which invalidates almost 50% of the range.  In 
+    // practice, bounds are typically small and only a tiny amount of the range
+    // is eliminated.
+    for (;;) {
+        uint32_t r = pcg32_random();
+        if (r >= threshold)
+            return r % bound;
+    }
+}
+
 
 const float albedo = MU_S / (MU_S + MU_A);
 const float shells_per_mfp = 1e4 / MICRONS_PER_SHELL / (MU_A + MU_S);
@@ -128,23 +162,27 @@ void photon(float* heats, float* heats_squared)
         // Nueva dirección, proceso cada linea independientemente
         // para asi evitar el uso de mascara e ejecucion de instrucciones 
         // ineficientes en lineas ya terminadas.
-        _Alignas(32) float xi1_arr[8] = {0}, xi2_arr[8] = {0}, t_reject_arr[8] = {0};
-        // proceso cada foton
-        for (int i = 0; i < 8; i++) {
-            float xi1_local,xi2_local, t_local;
-            do{
-                xi1_local = 2.0f * (pcg32_random() / (float)UINT32_MAX) - 1.0f;
-                xi2_local = 2.0f * (pcg32_random() / (float)UINT32_MAX) - 1.0f;
-                t_local = xi1_local * xi1_local + xi2_local * xi2_local;
-            } while (1.0f < t_local);
-            xi1_arr[i] = xi1_local;
-            xi2_arr[i] = xi2_local;
-            t_reject_arr[i] = t_local;
+
+        //Punto en el círculo unitario con coord. polares
+        _Alignas(32) float dist[8] = {0}, cos_t[8] = {0}, sin_t[8] = {0};
+        float theta = 0; 
+        for (int i = 0; i < 8; i++) {           
+            theta = pcg32_boundedrand(2 * M_PI);    //angulo en radianes
+            dist[i] = pcg32_random() / (float)UINT32_MAX; //aleatorio en 0,1
+            cos_t[i] = cosf(theta);
+            sin_t[i] = sinf(theta); 
         }
-        // Cargar los resultados en un vector
-        __m256 xi1 = _mm256_loadu_ps(xi1_arr);
-        __m256 xi2 = _mm256_loadu_ps(xi2_arr);
-        __m256 t_reject = _mm256_loadu_ps(t_reject_arr);
+
+        __m256 dist_v  = _mm256_loadu_ps(dist);
+        __m256 cos_theta = _mm256_loadu_ps(cos_t); 
+        __m256 sin_theta = _mm256_loadu_ps(sin_t); 
+        
+        __m256 r_v  = _mm256_sqrt_ps(dist_v);
+        __m256 xi1 = _mm256_mul_ps(r_v, cos_theta); //coordenada x
+        __m256 xi2 = _mm256_mul_ps(r_v, sin_theta); //coordenada y
+
+        __m256 t_reject = _mm256_fmadd_ps(xi1 , xi1 ,_mm256_mul_ps(xi2,xi2)); 
+  
         // u = 2t - 1  
         u = _mm256_sub_ps(_mm256_mul_ps(two, t_reject), one);
 
