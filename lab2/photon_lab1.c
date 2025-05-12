@@ -42,7 +42,7 @@ void photon(float* heats, float* heats_squared)
         y += t * v;
         z += t * w;
 
-        unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; /* absorb */pcg32_random();
+        unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; /* absorb */
         if (shell > SHELLS - 1) {
             shell = SHELLS - 1;
         }
