@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "immintrin.h": "c",
-        "emmintrin.h": "c",
-        "smmintrin.h": "c"
-    }
-}

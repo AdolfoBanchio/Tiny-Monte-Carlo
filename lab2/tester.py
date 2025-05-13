@@ -97,13 +97,11 @@ class TinyMcRuner:
             writer.writerows(results)
 
 
-# caso 0 
-
-for i in range(0,3):
+for i in range(0,2):
     for c in ["gcc-14", "clang-19", "icx"]:
-        for f in [32, 128, 512]:
+        for f in [128]:
             case = f"case_{i}"
-            runner = TinyMcRuner(case, 30, compiler=c, photons=f)
+            runner = TinyMcRuner(case, 50, compiler=c, photons=f)
             runner.compile()
             runner.run()
             runner.save_results()

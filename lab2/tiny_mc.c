@@ -5,15 +5,11 @@
  * Adaptado para CP2014, Nicolas Wolovick
  */
 
-#define _XOPEN_SOURCE 500 // M_PI
+ #define _XOPEN_SOURCE 500 // M_PI
 
 #include "params.h"
 
-#ifdef USE_OPT
-    #include "photon_vect.h"
-#else
-    #include "photon.h"
-#endif
+#include "photon.h"
 
 #include "wtime.h"
 
@@ -29,8 +25,8 @@ char t3[] = "CPU version, adapted for PEAGPGPU by Gustavo Castellano"
 
 
 // global state, heat and heat square in each shell
-static float heat[SHELLS];
-static float heat2[SHELLS];
+_Alignas(32) static float heat[SHELLS];
+_Alignas(32) static float heat2[SHELLS];
 
 
 /***
@@ -50,9 +46,15 @@ int main(void)
     // start timer
     double start = wtime();
     // simulation
-    for (unsigned int i = 0; i < PHOTONS; ++i) {
+#ifdef USE_OPT
+    for (unsigned int i = 0; i < PHOTONS; i+=8) {
         photon(heat, heat2);
     }
+#else
+    for (unsigned int i = 0; i < PHOTONS; i++) {
+        photon(heat, heat2);
+    }
+#endif
     // stop timer
     double end = wtime();
     assert(start <= end);
@@ -63,12 +65,14 @@ int main(void)
 
     printf("# Radius\tHeat\n");
     printf("# [microns]\t[W/cm^3]\tError\n");
+    /*
     float t = 4.0f * M_PI * powf(MICRONS_PER_SHELL, 3.0f) * PHOTONS / 1e12;
-    /* for (unsigned int i = 0; i < SHELLS - 1; ++i) {
+     for (unsigned int i = 0; i < SHELLS - 1; ++i) {
         printf("%6.0f\t%12.5f\t%12.5f\n", i * (float)MICRONS_PER_SHELL,
                heat[i] / t / (i * i + i + 1.0 / 3.0),
                sqrt(heat2[i] - heat[i] * heat[i] / PHOTONS) / t / (i * i + i + 1.0f / 3.0f));
-    } */
+    } 
+    */
     printf("# extra\t%12.5f\n", heat[SHELLS - 1] / PHOTONS);
 
     return 0;
