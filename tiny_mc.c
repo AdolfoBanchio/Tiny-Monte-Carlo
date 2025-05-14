@@ -46,11 +46,16 @@ int main(void)
     // start timer
     double start = wtime();
     // simulation
-#ifdef USE_OPT
+#if USE_OPT == 2
+    //#pragma omp parallel for 
     for (unsigned int i = 0; i < PHOTONS; i+=8) {
         photon(heat, heat2);
     }
-#else
+#elif USE_OPT == 1
+    for (unsigned int i = 0; i < PHOTONS; i+=8) {
+        photon(heat, heat2);
+    }
+#elif USE_OPT == 0
     for (unsigned int i = 0; i < PHOTONS; i++) {
         photon(heat, heat2);
     }
