@@ -48,8 +48,26 @@ int main(void)
     // simulation
 #if USE_OPT == 2
     //#pragma omp parallel for 
-    for (unsigned int i = 0; i < PHOTONS; i+=8) {
-        photon(heat, heat2);
+    #pragma omp parallel
+    {
+        // declare local heat and heat2
+        _Alignas(32) float local_heat[SHELLS];
+        _Alignas(32) float local_heat2[SHELLS];
+
+        // execute simulation in  multiple threads for different shells
+        #pragma omp for
+        for (unsigned int i = 0; i < PHOTONS; i+=8) {
+            photon(local_heat, local_heat2);
+        }
+
+        // reduce local heat and heat2 to global heat and heat2
+        #pragma omp critical
+        {
+            for (unsigned int i = 0; i < SHELLS; ++i) {
+                heat[i] += local_heat[i];
+                heat2[i] += local_heat2[i];
+            }
+        }
     }
 #elif USE_OPT == 1
     for (unsigned int i = 0; i < PHOTONS; i+=8) {
