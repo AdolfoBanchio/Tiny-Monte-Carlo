@@ -97,7 +97,7 @@ class TinyMcRuner:
             writer.writerows(results)
 
 
-for i in range(0,2):
+for i in range(0,3):
     for c in ["gcc-14", "clang-19", "icx"]:
         for f in [128]:
             case = f"case_{i}"
