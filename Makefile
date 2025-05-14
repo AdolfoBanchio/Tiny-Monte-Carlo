@@ -3,8 +3,8 @@ CC = gcc
 PHOTONS ?= 524288
 
 # Flags
-CFLAGS_0 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -fopt-info-vec-all -DPHOTONS=$(PHOTONS)
-CFLAGS_1 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -fopt-info-vec -fopt-info-vec-missed -DUSE_OPT=1 -DPHOTONS=$(PHOTONS)
+CFLAGS_0 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -DPHOTONS=$(PHOTONS)
+CFLAGS_1 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -DUSE_OPT=1 -DPHOTONS=$(PHOTONS)
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW
 
