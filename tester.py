@@ -14,6 +14,9 @@ import subprocess
 import csv
 import platform 
 
+CASE0= f"case_{0}"
+CASE1= f"case_{1}"
+CASE2= f"case_{2}"
 class TinyMcRuner:
     def __init__(self, case, n, compiler="gcc", photons=32, n_threads=8):
         self.case = case
@@ -92,20 +95,32 @@ class TinyMcRuner:
         # crear csv
 
         # extraer nombre del dispositivo donde se ejecuto
-        with open(f"./results/{self.case}_{self.compiler}_{self.device}_{self.photons}K_{n_threads}Th.csv", "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
-            writer.writeheader()
-            writer.writerows(results)
+        if self.case == CASE2: 
+            with open(f"./results/{self.case}_{self.compiler}_{self.device}_{self.photons}K_{self.n_threads}Th.csv", "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
+                writer.writeheader()
+                writer.writerows(results)
+        else: 
+            with open(f"./results/{self.case}_{self.compiler}_{self.device}_{self.photons}K.csv", "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
+                writer.writeheader()
+                writer.writerows(results)
 
 cores = os.cpu_count()
 for i in range(2,3):
-    for c in ["gcc-14", "clang-19", "icx"]:
-        for n_threads in [1,cores/2,cores]:
-            for f in [512,1024,4096]:
-                case = f"case_{i}"
-                runner = TinyMcRuner(case, 50, compiler=c, photons=f,n_threads=n_threads)
+    for c in ["gcc"]:
+        for f in [512,1024,4096]:
+            case = f"case_{i}"
+            if case != CASE2:
+                runner = TinyMcRuner(case, 50, compiler=c, photons=f)
                 runner.compile()
                 runner.run()
                 runner.save_results()
 
+            else: 
+                for n_threads in [1,cores/2,cores]:
+                    runner = TinyMcRuner(case, 50, compiler=c, photons=f,n_threads=n_threads)
+                    runner.compile()
+                    runner.run()
+                    runner.save_results()
 
