@@ -8,7 +8,7 @@ Tendra 3 metodos:
     - generar grafico de salida
 """
 import os
-import matplotlib.pyplot as plt
+
 import re
 import subprocess
 import csv
