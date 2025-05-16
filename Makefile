@@ -1,11 +1,12 @@
 # Compilers
 CC = gcc
 PHOTONS ?= 524288
+N_THREADS ?= 8
 
 # Flags
 CFLAGS_0 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -DUSE_OPT=0 -DPHOTONS=$(PHOTONS)
 CFLAGS_1 = -std=c11 -Wall -Wextra -O3 -march=native -ftree-vectorize -ffast-math -falign-functions=32 -falign-loops=32 -flto -DUSE_OPT=1 -DPHOTONS=$(PHOTONS)
-CFLAGS_2_BASE = -std=c11 -Wall -Wextra -g -O3 -march=native -ftree-vectorize -ffast-math -fopenmp -falign-functions=32 -falign-loops=32 -flto -DUSE_OPT=2 -DPHOTONS=$(PHOTONS)
+CFLAGS_2_BASE = -std=c11 -Wall -Wextra -g -O3 -march=native -ftree-vectorize -ffast-math -fopenmp -falign-functions=32 -falign-loops=32 -flto -DUSE_OPT=2 -DPHOTONS=$(PHOTONS) -DN_THREADS=$(N_THREADS)
 
 TINY_LDFLAGS = -lm
 CG_LDFLAGS = -lm -lglfw -lGL -lGLEW

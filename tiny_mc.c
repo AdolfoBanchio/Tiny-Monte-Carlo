@@ -18,6 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
+#ifndef N_THREADS 
+    #define N_THREADS = 8
+#endif 
 
 char t1[] = "Tiny Monte Carlo by Scott Prahl (http://omlc.ogi.edu)";
 char t2[] = "1 W Point Source Heating in Infinite Isotropic Scattering Medium";
@@ -48,6 +51,7 @@ int main(void)
     double start = wtime();
     // simulation
 #if USE_OPT == 2
+    omp_set_num_threads(N_THREADS); 
    #pragma omp parallel for reduction(+:heat[:SHELLS], heat2[:SHELLS])
     for (unsigned int i = 0; i < PHOTONS; i+=8) {
         photon(heat, heat2);

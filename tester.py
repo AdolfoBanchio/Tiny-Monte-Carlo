@@ -15,13 +15,14 @@ import csv
 import platform 
 
 class TinyMcRuner:
-    def __init__(self, case, n, compiler="gcc", photons=32):
+    def __init__(self, case, n, compiler="gcc", photons=32, n_threads=8):
         self.case = case
         self.exe = f"./{case}"
         self.runs = n
         self.compiler = compiler
-        self.outfile = f"./results/{case}_{compiler}_{photons}k.txt"
+        self.outfile = f"./results/{case}_{compiler}_{photons}k_{n_threads}.txt"
         self.photons = photons
+        self.n_threads= n_threads
         if "adolfo" in platform.node():
             self.device = "local-pc"
         else:
@@ -29,7 +30,7 @@ class TinyMcRuner:
 
     def compile(self):
         subprocess.run(["make", "clean"], check=True)
-        subprocess.run(["make", f"CC={self.compiler}", self.case, f"PHOTONS={self.photons*1024}"], check=True)
+        subprocess.run(["make", f"CC={self.compiler}", self.case, f"PHOTONS={self.photons*1024}", f"N_THREADS={self.n_threads}"], check=True)
     
     def run(self):
         with open(self.outfile, "w") as outfile:
@@ -91,17 +92,20 @@ class TinyMcRuner:
         # crear csv
 
         # extraer nombre del dispositivo donde se ejecuto
-        with open(f"./results/{self.case}_{self.compiler}_{self.device}_{self.photons}K.csv", "w", newline="") as f:
+        with open(f"./results/{self.case}_{self.compiler}_{self.device}_{self.photons}K_{n_threads}Th.csv", "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
             writer.writeheader()
             writer.writerows(results)
 
-
-for i in range(0,3):
+cores = os.cpu_count()
+for i in range(2,3):
     for c in ["gcc-14", "clang-19", "icx"]:
-        for f in [128]:
-            case = f"case_{i}"
-            runner = TinyMcRuner(case, 50, compiler=c, photons=f)
-            runner.compile()
-            runner.run()
-            runner.save_results()
+        for n_threads in [1,cores/2,cores]:
+            for f in [512,1024,4096]:
+                case = f"case_{i}"
+                runner = TinyMcRuner(case, 50, compiler=c, photons=f,n_threads=n_threads)
+                runner.compile()
+                runner.run()
+                runner.save_results()
+
+
