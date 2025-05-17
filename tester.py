@@ -13,6 +13,7 @@ import re
 import subprocess
 import csv
 import platform 
+import numpy as np
 
 CASE0= f"case_{0}"
 CASE1= f"case_{1}"
@@ -118,7 +119,11 @@ for i in range(2,3):
                 runner.save_results()
 
             else: 
-                for n_threads in [1,cores/2,cores]:
+                # generate an array of 8 equidistant numbers between 1 and cores
+                # for each number, run the test with that number of threads 
+                n_threads_list = np.linspace(1, cores, 8, dtype=int)
+                n_threads_list = np.unique(n_threads_list)
+                for n_threads in n_threads_list:
                     runner = TinyMcRuner(case, 50, compiler=c, photons=f,n_threads=n_threads)
                     runner.compile()
                     runner.run()
