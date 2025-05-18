@@ -1,131 +1,112 @@
-""" 
-Modulo de testeo para los diferentes casos de uso.
-
-El objeto toma como parametro el nombre del caso a testear.
-Tendra 3 metodos:
-    - compilar
-    - ejecutar y guardar salida
-    - generar grafico de salida
-"""
 import os
-
 import re
 import subprocess
 import csv
-import platform 
+import platform
 import numpy as np
 
-CASE0= f"case_{0}"
-CASE1= f"case_{1}"
-CASE2= f"case_{2}"
-class TinyMcRuner:
-    def __init__(self, case, n, compiler="gcc", photons=32, n_threads=8):
+# Constants for case identifiers
+CASE0 = "case_0"
+CASE1 = "case_1"
+CASE2 = "case_2"
+
+class TinyMcRunner:
+    def __init__(self, case, n_runs, compiler="gcc", photons=32, n_threads=8, output_dir='./results'):
         self.case = case
         self.exe = f"./{case}"
-        self.runs = n
+        self.n_runs = n_runs
         self.compiler = compiler
-        self.outfile = f"./results/{case}_{compiler}_{photons}k_{n_threads}.txt"
         self.photons = photons
-        self.n_threads= n_threads
-        if "adolfo" in platform.node():
-            self.device = "local-pc"
-        else:
-            self.device = platform.node()
+        self.n_threads = n_threads
+        self.device = "local-pc" if "adolfo" in platform.node() else platform.node()
+        self.output_dir = output_dir
+        self.outfile = self._generate_outfile_name()
+
+        # Ensure the output directory exists
+        os.makedirs(self.output_dir, exist_ok=True)
+
+    def _generate_outfile_name(self):
+        base_filename = f"{self.case}_{self.compiler}_{self.device}_{self.photons}K"
+        if self.case == CASE2:
+            base_filename += f"_{self.n_threads}Th"
+        return os.path.join(self.output_dir, base_filename + ".txt")
 
     def compile(self):
         subprocess.run(["make", "clean"], check=True)
-        subprocess.run(["make", f"CC={self.compiler}", self.case, f"PHOTONS={self.photons*1024}", f"N_THREADS={self.n_threads}"], check=True)
-    
+        subprocess.run(
+            ["make", f"CC={self.compiler}", self.case, f"PHOTONS={self.photons * 1024}", f"N_THREADS={self.n_threads}"],
+            check=True
+        )
+
     def run(self):
-        with open(self.outfile, "w") as outfile:
-            try:
+        try:
+            with open(self.outfile, "w") as outfile:
                 process = subprocess.run(
-                    ["perf", "stat", "-r", str(self.runs), self.exe],
+                    ["perf", "stat", "-r", str(self.n_runs), self.exe],
                     stdout=outfile, stderr=subprocess.PIPE, text=True, check=True
                 )
                 print(process.stderr)
-            except subprocess.CalledProcessError as e:
-                print(f"Error executing perf: {e}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error executing perf: {e}")
 
     def save_results(self):
-        """  
-        el archivo de salida tendra el siguiente formato repetido n veces:
-
-        # Tiny Monte Carlo by Scott Prahl (http://omlc.ogi.edu)
-        # 1 W Point Source Heating in Infinite Isotropic Scattering Medium
-        # CPU version, adapted for PEAGPGPU by Gustavo Castellano and Nicolas Wolovick
-        # Scattering =   20.000/cm
-        # Absorption =    2.000/cm
-        # Photons    =    32768
-        #
-        # 0.076823 seconds
-        # 426.540226 K photons per second
-        # Radius	Heat
-        # [microns]	[W/cm^3]	Error
-        # extra	     0.00000
-        
-        Extraer los datos:
-            - cantidad de fotones simulados
-            - tiempo de ejecucion
-            - cantidad de fotones por segundo
-        """
         with open(self.outfile, "r") as f:
-                    data = f.read()
+            data = f.read()
 
-        # separar los datos con la linea "# extra"
-        runs = re.split(r"(# extra\s+[\d.e+-]+)", data)
-
+        runs_data = re.split(r"(# extra\s+[\d.e+-]+)", data)
         results = []
-        for i in range(0, len(runs)-1, 2):
-            
-            # extraer cantidad de photones
-            photons = int(re.search(r"Photons\s+=\s+(\d+)", runs[i]).group(1))
 
-            # extraer tiempo de ejecucion
-            time = float(re.search(r"(\d+\.\d+) seconds", runs[i]).group(1))
+        for i in range(0, len(runs_data) - 1, 2):
+            photons_match = re.search(r"Photons\s+=\s+(\d+)", runs_data[i])
+            time_match = re.search(r"(\d+\.\d+) seconds", runs_data[i])
+            photons_per_second_match = re.search(r"(\d+\.\d+) K photons per second", runs_data[i])
 
-            # extraer cantidad de fotones por segundo
-            photons_per_second = float(re.search(r"(\d+\.\d+) K photons per second", runs[i]).group(1))
+            if photons_match and time_match and photons_per_second_match:
+                results.append({
+                    "photons": int(photons_match.group(1)),
+                    "time": float(time_match.group(1)),
+                    "photons_per_second": float(photons_per_second_match.group(1))
+                })
 
-            res = {
-                "photons": photons,
-                "time": time,
-                "photons_per_second": photons_per_second
-            }
-            results.append(res)
-        # crear csv
+        csv_filename = self.outfile.replace('.txt', '.csv', 1)
+        with open(csv_filename, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
+            writer.writeheader()
+            writer.writerows(results)
 
-        # extraer nombre del dispositivo donde se ejecuto
-        if self.case == CASE2: 
-            with open(f"./results/{self.case}_{self.compiler}_{self.device}_{self.photons}K_{self.n_threads}Th.csv", "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
-                writer.writeheader()
-                writer.writerows(results)
-        else: 
-            with open(f"./results/{self.case}_{self.compiler}_{self.device}_{self.photons}K.csv", "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["photons", "time", "photons_per_second"])
-                writer.writeheader()
-                writer.writerows(results)
+# Function to run tests for both strong and weak scaling
+def execute_tests(scaling_type, output_dir='./results'):
+    cores = os.cpu_count()
 
-cores = os.cpu_count()
-for i in range(2,3):
-    for c in ["gcc","icx"]:
-        for f in [512,1024,4096]:
-            case = f"case_{i}"
-            if case != CASE2:
-                runner = TinyMcRuner(case, 50, compiler=c, photons=f)
-                runner.compile()
-                runner.run()
-                runner.save_results()
-
-            else: 
-                # generate an array of 8 equidistant numbers between 1 and cores
-                # for each number, run the test with that number of threads 
-                n_threads_list = np.linspace(1, cores, 8, dtype=int)
-                n_threads_list = np.unique(n_threads_list)
-                for n_t in n_threads_list:
-                    runner = TinyMcRuner(case, 30, compiler=c, photons=f,n_threads=n_t)
+    for i in range(2, 3):
+        for compiler in ["gcc", "icx"]:
+            if scaling_type == "strong":
+                for photons in [512, 1024, 4096]:
+                    case = f"case_{i}"
+                    if case != CASE2:
+                        runner = TinyMcRunner(case, 50, compiler=compiler, photons=photons, output_dir=output_dir)
+                        runner.compile()
+                        runner.run()
+                        runner.save_results()
+                    else:    
+                        for n_threads in np.unique(np.linspace(1, cores, 8, dtype=int)):
+                            runner = TinyMcRunner(case, 30, compiler=compiler, photons=photons, n_threads=n_threads, output_dir=output_dir)
+                            runner.compile()
+                            runner.run()
+                            runner.save_results()
+                            
+            elif scaling_type == "weak":
+                case = CASE2
+                base_photons = 512
+                for n_threads in np.unique(np.linspace(1, cores, 8, dtype=int)):
+                    photons = base_photons * n_threads
+                    runner = TinyMcRunner(case, 30, compiler=compiler, photons=photons, n_threads=n_threads, output_dir=output_dir)
                     runner.compile()
                     runner.run()
                     runner.save_results()
+            else:
+                raise ValueError("Invalid scaling type. Choose 'strong' or 'weak'.")
 
+if __name__ == "__main__":
+    # Example usage: Running tests for weak scaling with a custom output directory
+    execute_tests("weak", output_dir='./results/case_2_weak_scaling')

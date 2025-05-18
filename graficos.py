@@ -44,41 +44,91 @@ def extract_max_pps(file_path, case, compiler, device, photons, n_threads):
         else:
             cases[case][compiler][device][photons][n_threads] = max_pps
 
-def plot_weak_scaling(devices):
-    fig, axes = plt.subplots(len(devices), 1, figsize=(10, 4 * len(devices)), sharex=True)
-    axes = [axes] if len(devices) == 1 else axes
-
-    for ax, device in zip(axes, devices):
+def plot_strong_scaling(devices):
+    for device in devices:
+        fig, ax = plt.subplots(figsize=(10, 4))
         thread_counts = sorted(cases[CASE2]['gcc'][device][CASE_PREFIXES[CASE2]].keys(), key=float)
-        
+
         for size, label in CASE_PREFIXES.items():
             performance = [float(cases[CASE2]['gcc'][device][label][thread][2]) for thread in thread_counts]
             ax.plot(thread_counts, performance, marker='o', label=f'Size {label}K')
 
-        ax.set_title(f'Weak Scaling Performance - Device: {device}')
+        ax.set_title(f'Strong Scaling Performance - Device: {device}')
         ax.set_ylabel('Performance [k photons/s]')
         ax.set_xticks(thread_counts)
         ax.legend(title="Problem Size")
         ax.grid(True)
-    
-    axes[-1].set_xlabel('Number of Threads')
-    plt.tight_layout()
-    plt.show()
+        ax.set_xlabel('Number of Threads')
+        plt.tight_layout()
+        plt.show()
+
+        # Save the figure
+        fig.savefig(f'./graphics/strong_scaling_{device}_OMP.png', dpi=300)
+
+def plot_weak_scaling(devices, output_dir='./graphics'):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for device in devices:
+        fig, ax = plt.subplots(figsize=(10, 4))
+        for size, label in CASE_PREFIXES.items():
+            thread_counts = sorted(
+                float(k) for k in cases[CASE2]['gcc'][device].get(label, {}).keys()
+            )
+            performance = [
+                float(cases[CASE2]['gcc'][device][label][thread][2]) for thread in thread_counts
+            ]
+
+            if performance:
+                ax.plot(thread_counts, performance, marker='o', label=f'Size {label}K')
+
+        ax.set_title(f'Weak Scaling Performance - Device: {device}')
+        ax.set_ylabel('Performance [k photons/s]')
+        ax.set_xlabel('Number of Threads')
+        ax.set_xticks(thread_counts)
+        ax.legend(title="Problem Size")
+        ax.grid(True)
+
+        plt.tight_layout()
+        plt.savefig(f'{output_dir}/weak_scaling_{device}_OMP.png', dpi=300)
+        plt.close(fig)
 
 def main():
     global cases
     cases = {}
 
-    files = load_files()
+    """ 
+    For case_2 (multithreaded) two analysis are done:
+    1. Strong scaling, result directory is ./results/case_2_strong_scaling
+    2. Weak scaling, result directory is ./results/case_2_weak_scaling
+    """
+    # create strong scaling graphics
+    path = './results/case_2_strong_scaling'
+    os.makedirs(path, exist_ok=True)
+    files = load_files(path=path)
     for file in files:
         case, compiler, device, photons, n_threads = parse_file_name(file)
         initialize_structure(case, compiler, device, photons, n_threads)
-        extract_max_pps(f'./results/{file}', case, compiler, device, photons, n_threads)
-
-    print(cases[CASE2]['gcc'])
+        extract_max_pps(f'{path}/{file}', case, compiler, device, photons, n_threads)
+    #print(cases[CASE2]['gcc'])
 
     devices = sorted(cases[CASE2]['gcc'].keys())
-    plot_weak_scaling(devices)
+    plot_strong_scaling(devices)
+
+    # create weak scaling graphics
+    cases = {}
+    path = './results/case_2_weak_scaling'
+    os.makedirs(path, exist_ok=True)
+    files = load_files(path=path)
+    for file in files:
+        case, compiler, device, photons, n_threads = parse_file_name(file)
+        initialize_structure(case, compiler, device, photons, n_threads)
+        extract_max_pps(f'{path}/{file}', case, compiler, device, photons, n_threads)
+    
+    #print(cases[CASE2]['gcc'])
+    devices = sorted(cases[CASE2]['gcc'].keys())
+    plot_weak_scaling(devices, output_dir='./graphics')
+
 
 if __name__ == '__main__':
     main()
