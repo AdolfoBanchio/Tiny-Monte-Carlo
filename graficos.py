@@ -4,6 +4,7 @@ import csv
 
 CASE2 = "2"
 CASE_PREFIXES = {"0": "512", "1": "1024", "2": "4096"}
+COMPILERS = ["gcc", "icx"]
 
 def load_files(path='./results'):
     return [file for file in os.listdir(path) if file.endswith('.csv')]
@@ -45,49 +46,51 @@ def extract_max_pps(file_path, case, compiler, device, photons, n_threads):
             cases[case][compiler][device][photons][n_threads] = max_pps
 
 def plot_strong_scaling(devices):
-    for device in devices:
-        fig, ax = plt.subplots(figsize=(10, 4))
-        thread_counts = sorted(cases[CASE2]['gcc'][device][CASE_PREFIXES[CASE2]].keys(), key=float)
+    for compiler in COMPILERS:
+        for device in devices:
+            fig, ax = plt.subplots(figsize=(10, 4))
+            thread_counts = sorted(cases[CASE2][compiler][device][CASE_PREFIXES[CASE2]].keys(), key=float)
 
-        for size, label in CASE_PREFIXES.items():
-            performance = [float(cases[CASE2]['gcc'][device][label][thread][2]) for thread in thread_counts]
-            ax.plot(thread_counts, performance, marker='o', label=f'Size {label}K')
+            for size, label in CASE_PREFIXES.items():
+                performance = [float(cases[CASE2][compiler][device][label][thread][2]) for thread in thread_counts]
+                ax.plot(thread_counts, performance, marker='o', label=f'Size {label}K')
 
-        ax.set_title(f'Strong Scaling Performance - Device: {device}')
-        ax.set_ylabel('Performance [k photons/s]')
-        ax.set_xticks(thread_counts)
-        ax.legend(title="Problem Size")
-        ax.grid(True)
-        ax.set_xlabel('Number of Threads')
-        plt.tight_layout()
-        plt.show()
+            ax.set_title(f'Strong Scaling Performance - Device: {device} - {compiler}')
+            ax.set_ylabel('Performance [k photons/s]')
+            ax.set_xticks(thread_counts)
+            ax.legend(title="Problem Size")
+            ax.grid(True)
+            ax.set_xlabel('Number of Threads')
+            plt.tight_layout()
+            plt.show()
 
-        # Save the figure
-        fig.savefig(f'./graphics/strong_scaling_{device}_OMP.png', dpi=300)
+            # Save the figure
+            fig.savefig(f'./graphics/strong_scaling_{device}_{compiler}_OMP.png', dpi=300)
 
 def plot_weak_scaling(devices, output_dir='./graphics'):
-    for device in devices:
-        fig, ax = plt.subplots(figsize=(10, 4))
-        sizes = sorted(cases[CASE2]['gcc'][device].keys(), key=float)
-        print(sizes)
-        threads = [list(cases[CASE2]['gcc'][device][size].keys())[0] for size in sizes]
-        print(threads)
-        performance = [float(cases[CASE2]['gcc'][device][size][th][2]) for size,th in zip(sizes, threads)]
-        print(performance)
-        ax.plot(threads, performance, marker='o')
-        for i,size in enumerate(sizes):
-            ax.annotate(f'{size}K', (threads[i], performance[i]), textcoords="offset points", xytext=(0,10), ha='center')
+    for compiler in COMPILERS:
+        for device in devices:
+            fig, ax = plt.subplots(figsize=(10, 4))
+            sizes = sorted(cases[CASE2][compiler][device].keys(), key=float)
+            print(sizes)
+            threads = [list(cases[CASE2][compiler][device][size].keys())[0] for size in sizes]
+            print(threads)
+            performance = [float(cases[CASE2][compiler][device][size][th][2]) for size,th in zip(sizes, threads)]
+            print(performance)
+            ax.plot(threads, performance, marker='o')
+            for i,size in enumerate(sizes):
+                ax.annotate(f'{size}K', (threads[i], performance[i]), textcoords="offset points", xytext=(0,10), ha='center')
 
-        ax.set_title(f'Strong Scaling Performance - Device: {device}')
-        ax.set_ylabel('Performance [k photons/s]')
-        #ax.set_xticks(threads)
-        ax.grid(True)
-        ax.set_xlabel('Number of Threads')
-        plt.tight_layout()
-        plt.show()
+            ax.set_title(f'Weak Scaling Performance - Device: {device} - {compiler}')
+            ax.set_ylabel('Performance [k photons/s]')
+            #ax.set_xticks(threads)
+            ax.grid(True)
+            ax.set_xlabel('Number of Threads')
+            plt.tight_layout()
+            plt.show()
 
-        # Save the figure
-        fig.savefig(f'./graphics/weak_scaling_{device}_OMP.png', dpi=300)
+            # Save the figure
+            fig.savefig(f'./graphics/weak_scaling_{device}_{compiler}_OMP.png', dpi=300)
 
 def main():
     global cases
