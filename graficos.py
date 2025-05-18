@@ -66,32 +66,28 @@ def plot_strong_scaling(devices):
         fig.savefig(f'./graphics/strong_scaling_{device}_OMP.png', dpi=300)
 
 def plot_weak_scaling(devices, output_dir='./graphics'):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
     for device in devices:
         fig, ax = plt.subplots(figsize=(10, 4))
-        for size, label in CASE_PREFIXES.items():
-            thread_counts = sorted(
-                float(k) for k in cases[CASE2]['gcc'][device].get(label, {}).keys()
-            )
-            performance = [
-                float(cases[CASE2]['gcc'][device][label][thread][2]) for thread in thread_counts
-            ]
+        sizes = sorted(cases[CASE2]['gcc'][device].keys(), key=float)
+        print(sizes)
+        threads = [list(cases[CASE2]['gcc'][device][size].keys())[0] for size in sizes]
+        print(threads)
+        performance = [float(cases[CASE2]['gcc'][device][size][th][2]) for size,th in zip(sizes, threads)]
+        print(performance)
+        ax.plot(threads, performance, marker='o')
+        for i,size in enumerate(sizes):
+            ax.annotate(f'{size}K', (threads[i], performance[i]), textcoords="offset points", xytext=(0,10), ha='center')
 
-            if performance:
-                ax.plot(thread_counts, performance, marker='o', label=f'Size {label}K')
-
-        ax.set_title(f'Weak Scaling Performance - Device: {device}')
+        ax.set_title(f'Strong Scaling Performance - Device: {device}')
         ax.set_ylabel('Performance [k photons/s]')
-        ax.set_xlabel('Number of Threads')
-        ax.set_xticks(thread_counts)
-        ax.legend(title="Problem Size")
+        #ax.set_xticks(threads)
         ax.grid(True)
-
+        ax.set_xlabel('Number of Threads')
         plt.tight_layout()
-        plt.savefig(f'{output_dir}/weak_scaling_{device}_OMP.png', dpi=300)
-        plt.close(fig)
+        plt.show()
+
+        # Save the figure
+        fig.savefig(f'./graphics/weak_scaling_{device}_OMP.png', dpi=300)
 
 def main():
     global cases
@@ -125,7 +121,7 @@ def main():
         initialize_structure(case, compiler, device, photons, n_threads)
         extract_max_pps(f'{path}/{file}', case, compiler, device, photons, n_threads)
     
-    #print(cases[CASE2]['gcc'])
+    print(cases[CASE2]['gcc']['local-pc'].keys())
     devices = sorted(cases[CASE2]['gcc'].keys())
     plot_weak_scaling(devices, output_dir='./graphics')
 
