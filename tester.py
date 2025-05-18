@@ -109,4 +109,6 @@ def execute_tests(scaling_type, output_dir='./results'):
 
 if __name__ == "__main__":
     # Example usage: Running tests for weak scaling with a custom output directory
-    execute_tests("weak", output_dir='./results/case_2_weak_scaling')
+    tests = ["weak","strong"]
+    for test in tests:
+        execute_tests(test, output_dir=f"./results/case_2_{test}_scaling")
