@@ -109,7 +109,7 @@ class TinyMcRuner:
 
 cores = os.cpu_count()
 for i in range(2,3):
-    for c in ["gcc"]:
+    for c in ["gcc","icx"]:
         for f in [512,1024,4096]:
             case = f"case_{i}"
             if case != CASE2:
@@ -123,8 +123,8 @@ for i in range(2,3):
                 # for each number, run the test with that number of threads 
                 n_threads_list = np.linspace(1, cores, 8, dtype=int)
                 n_threads_list = np.unique(n_threads_list)
-                for n_threads in n_threads_list:
-                    runner = TinyMcRuner(case, 50, compiler=c, photons=f,n_threads=n_threads)
+                for n_t in n_threads_list:
+                    runner = TinyMcRuner(case, 30, compiler=c, photons=f,n_threads=n_t)
                     runner.compile()
                     runner.run()
                     runner.save_results()
