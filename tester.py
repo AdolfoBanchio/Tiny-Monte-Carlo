@@ -79,7 +79,7 @@ def execute_tests(scaling_type, output_dir='./results'):
     cores = os.cpu_count()
 
     for i in range(2, 3):
-        for compiler in ["gcc", "icx"]:
+        for compiler in ["icx"]:
             if scaling_type == "strong":
                 for photons in [512, 1024, 4096]:
                     case = f"case_{i}"
