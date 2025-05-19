@@ -109,9 +109,10 @@ def main():
         case, compiler, device, photons, n_threads = parse_file_name(file)
         initialize_structure(case, compiler, device, photons, n_threads)
         extract_max_pps(f'{path}/{file}', case, compiler, device, photons, n_threads)
-    #print(cases[CASE2]['gcc'])
+    print(cases[CASE2]['gcc'])
 
     devices = sorted(cases[CASE2]['gcc'].keys())
+    print(devices)
     plot_strong_scaling(devices)
 
     # create weak scaling graphics
