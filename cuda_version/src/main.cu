@@ -5,10 +5,10 @@
  * Adaptado para CP2014, Nicolas Wolovick
  */
 
-#define _XOPEN_SOURCE 500 // M_PI
+//#define _XOPEN_SOURCE 500 // M_PI
 
 #include "params.h"
-#include "photon.h"
+#include "photon.cuh"
 #include "wtime.h"
 
 #include <assert.h>
@@ -63,10 +63,11 @@ int main(void)
     // Launch simulation
     // Calculate grid and block dimensions
     int threadsPerBlock = 256;
+    int n_photons = PHOTONS;
     int blocksPerGrid = (n_photons + threadsPerBlock - 1) / threadsPerBlock;
     
     // Launch kernel
-    photon_kernel<<<blocksPerGrid, threadsPerBlock>>>(d_heats, d_heats_squared, n_photons);
+    photon_kernel<<<blocksPerGrid, threadsPerBlock>>>(d_heat, d_heat2, n_photons);
     
     // Check for errors
     cudaError_t error = cudaGetLastError();
