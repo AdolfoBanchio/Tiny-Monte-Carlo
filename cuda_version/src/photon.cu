@@ -1,9 +1,5 @@
 #include <math.h>
 #include <stdlib.h>
-#include <xmmintrin.h> //mul
-#include <immintrin.h>
-#include <emmintrin.h> //add
-#include <smmintrin.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
