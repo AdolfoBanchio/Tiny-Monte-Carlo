@@ -7,9 +7,9 @@
 
 //#define _XOPEN_SOURCE 500 // M_PI
 
-#include "params.h"
+#include "params.cuh"
 #include "photon.cuh"
-#include "wtime.h"
+#include "wtime.cuh"
 
 #include <assert.h>
 #include <math.h>
@@ -67,7 +67,8 @@ int main(void)
     int blocksPerGrid = (n_photons + threadsPerBlock - 1) / threadsPerBlock;
     
     // Launch kernel
-    photon_kernel<<<blocksPerGrid, threadsPerBlock>>>(d_heat, d_heat2, n_photons);
+    unsigned long long seed = SEED;
+    photon_kernel<<<blocksPerGrid, threadsPerBlock>>>(d_heat, d_heat2, n_photons,seed );
     
     // Check for errors
     cudaError_t error = cudaGetLastError();

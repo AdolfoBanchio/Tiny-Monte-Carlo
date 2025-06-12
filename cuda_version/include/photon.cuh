@@ -9,5 +9,5 @@ extern __constant__ float d_shells_per_mfp;
 
 // Host functions declarations
 void init_device_constants();
-__global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n_photons); 
+__global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n_photons, unsigned long long seed); 
 #endif // PHOTON_CUH
