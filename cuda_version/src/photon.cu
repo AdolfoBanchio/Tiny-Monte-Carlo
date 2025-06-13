@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <curand_kernel.h>
 
-#include "params.h"
+#include "params.cuh"
 
 // Device constants
 __constant__ float d_albedo;
@@ -17,14 +17,14 @@ __device__ float get_random(curandState* state) {
 }
 
 // Device function for photon simulation
-__global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n_photons) {
+__global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n_photons, unsigned long long seed) {
     // Calculate thread index
     unsigned int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= n_photons) return;
 
     // Initialize random state
     curandState state;
-    curand_init(SEED + tid, 0, 0, &state);
+    curand_init(seed + tid, 0, 0, &state);
 
     /* launch */
     float x = 0.0f;
