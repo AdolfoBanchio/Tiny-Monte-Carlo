@@ -26,6 +26,9 @@ __global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n
     curandState state;
     curand_init(seed + tid, 0, 0, &state);
 
+    float* heat_tid = heats +(size_t)SHELLS* (size_t)tid;
+    float* heat2_tid = heats_squared +(size_t)SHELLS*(size_t)tid;
+
     /* launch */
     float x = 0.0f;
     float y = 0.0f;
@@ -48,8 +51,8 @@ __global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n
         
         // Use atomic operations for thread-safe updates
         float deposit = (1.0f - d_albedo) * weight;
-        atomicAdd(&heats[shell], deposit);
-        atomicAdd(&heats_squared[shell], deposit * deposit);
+        heat_tid[shell]= deposit;
+        heat2_tid[shell] = deposit * deposit;
         
         weight *= d_albedo;
 

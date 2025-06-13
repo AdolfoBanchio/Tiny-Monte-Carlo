@@ -35,8 +35,9 @@ int main(void)
     printf("# Photons    = %8d\n#\n", PHOTONS);
 
     // Allocate host memory
-    float* h_heat = (float*)malloc(SHELLS * sizeof(float));
-    float* h_heat2 = (float*)malloc(SHELLS * sizeof(float));
+    int n_photons = PHOTONS;  
+    float* h_heat = (float*)malloc(n_photons * SHELLS * sizeof(float));
+    float* h_heat2 = (float*)malloc(n_photons* SHELLS * sizeof(float));
     
     // Initialize host arrays
     for (int i = 0; i < SHELLS; i++) {
@@ -44,15 +45,17 @@ int main(void)
         h_heat2[i] = 0.0f;
     }
 
-    // Allocate device memory
+    // Allocate device memory/
     float* d_heat;
     float* d_heat2;
-    cudaMalloc(&d_heat, SHELLS * sizeof(float));
-    cudaMalloc(&d_heat2, SHELLS * sizeof(float));
-    
-    // Initialize device arrays
-    cudaMemset(d_heat, 0, SHELLS * sizeof(float));
-    cudaMemset(d_heat2, 0, SHELLS * sizeof(float));
+ 
+
+    size_t total_size = (size_t)n_photons * SHELLS * sizeof(float);
+    cudaMalloc(&d_heat,  total_size);
+    cudaMalloc(&d_heat2, total_size);
+	 
+    cudaMemset(d_heat,  0, total_size);
+    cudaMemset(d_heat2, 0, total_size);	
 
     // Initialize device constants
     init_device_constants();
@@ -63,7 +66,6 @@ int main(void)
     // Launch simulation
     // Calculate grid and block dimensions
     int threadsPerBlock = 256;
-    int n_photons = PHOTONS;
     int blocksPerGrid = (n_photons + threadsPerBlock - 1) / threadsPerBlock;
     
     // Launch kernel
@@ -86,9 +88,24 @@ int main(void)
     double elapsed = end - start;
 
     // Copy results back to host
-    cudaMemcpy(h_heat, d_heat, SHELLS * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_heat2, d_heat2, SHELLS * sizeof(float), cudaMemcpyDeviceToHost);
-
+    cudaMemcpy(h_heat,  d_heat,    n_photons * SHELLS * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_heat2, d_heat2,   n_photons * SHELLS * sizeof(float),cudaMemcpyDeviceToHost);
+    
+    //Reducction of the sum
+	float* h_heat_final  = (float*)malloc(SHELLS * sizeof(float));
+	float* h2_heat_final = (float*)malloc(SHELLS * sizeof(float));
+	for (int s = 0; s < SHELLS; ++s) {
+    		double sum1 = 0, sum2 = 0;
+    		for (int t = 0; t < n_photons; ++t) {
+        		size_t idx = (size_t)t * SHELLS + s;
+        		sum1 += h_heat[idx];
+        		sum2 += h_heat2[idx];
+    		}
+    	h_heat_final[s]  = (float)sum1;
+    	h2_heat_final[s] = (float)sum2;
+	}
+   
+     
     printf("# %lf seconds\n", elapsed);
     printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
 
@@ -102,13 +119,14 @@ int main(void)
                sqrt(h_heat2[i] - h_heat[i] * h_heat[i] / PHOTONS) / t / (i * i + i + 1.0f / 3.0f));
     }
     */
-    printf("# extra\t%12.5f\n", h_heat[SHELLS - 1] / PHOTONS);
+    printf("# extra\t%12.5f\n", h_heat_final[SHELLS - 1] / PHOTONS);
 
     // Free memory
     free(h_heat);
     free(h_heat2);
+    free(h_heat_final);
+    free(h2_heat_final);
     cudaFree(d_heat);
     cudaFree(d_heat2);
-
     return 0;
 }
