@@ -5,7 +5,7 @@
  * Adaptado para CP2014, Nicolas Wolovick
  */
 
-//#define _XOPEN_SOURCE 500 // M_PI
+#define _XOPEN_SOURCE 500 // M_PI
 
 #include "params.cuh"
 #include "photon.cuh"
@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
+#include <curand_kernel.h>
 
 char t1[] = "Tiny Monte Carlo by Scott Prahl (http://omlc.ogi.edu)";
 char t2[] = "1 W Point Source Heating in Infinite Isotropic Scattering Medium";
@@ -48,7 +49,9 @@ int main(void)
     // Allocate device memory/
     float* d_heat;
     float* d_heat2;
- 
+    
+    curandState* d_states;
+    cudaMalloc(&d_states, n_photons * sizeof(curandState));
 
     size_t total_size = (size_t)n_photons * SHELLS * sizeof(float);
     cudaMalloc(&d_heat,  total_size);
@@ -68,9 +71,19 @@ int main(void)
     int threadsPerBlock = 256;
     int blocksPerGrid = (n_photons + threadsPerBlock - 1) / threadsPerBlock;
     
-    // Launch kernel
+    // Initialize random number generator states
+    init_rng_kernel<<<blocksPerGrid, threadsPerBlock>>>(d_states, SEED);
+    
+    // Check for errors
+    cudaError_t init_error = cudaGetLastError();
+    if (init_error != cudaSuccess) {
+        printf("CUDA error during initialization: %s\n", cudaGetErrorString(init_error));
+        exit(1);
+    }
+
+    // If succes, Launch kernel
     unsigned long long seed = SEED;
-    photon_kernel<<<blocksPerGrid, threadsPerBlock>>>(d_heat, d_heat2, n_photons,seed );
+    photon_kernel<<<blocksPerGrid, threadsPerBlock>>>(d_heat, d_heat2, d_states);
     
     // Check for errors
     cudaError_t error = cudaGetLastError();
@@ -88,11 +101,11 @@ int main(void)
     double elapsed = end - start;
 
     // Copy results back to host
-    cudaMemcpy(h_heat,  d_heat,    n_photons * SHELLS * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_heat2, d_heat2,   n_photons * SHELLS * sizeof(float),cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_heat,  d_heat, total_size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_heat2, d_heat2, total_size,cudaMemcpyDeviceToHost);
     
     //Reducction of the sum
-	float* h_heat_final  = (float*)malloc(SHELLS * sizeof(float));
+	/* float* h_heat_final  = (float*)malloc(SHELLS * sizeof(float));
 	float* h2_heat_final = (float*)malloc(SHELLS * sizeof(float));
 	for (int s = 0; s < SHELLS; ++s) {
     		double sum1 = 0, sum2 = 0;
@@ -103,7 +116,7 @@ int main(void)
     		}
     	h_heat_final[s]  = (float)sum1;
     	h2_heat_final[s] = (float)sum2;
-	}
+	} */
    
      
     printf("# %lf seconds\n", elapsed);
@@ -119,13 +132,13 @@ int main(void)
                sqrt(h_heat2[i] - h_heat[i] * h_heat[i] / PHOTONS) / t / (i * i + i + 1.0f / 3.0f));
     }
     */
-    printf("# extra\t%12.5f\n", h_heat_final[SHELLS - 1] / PHOTONS);
+    printf("# extra\t%12.5f\n", h_heat[SHELLS - 1] / PHOTONS);
 
     // Free memory
     free(h_heat);
     free(h_heat2);
-    free(h_heat_final);
-    free(h2_heat_final);
+    /* free(h_heat_final);
+    free(h2_heat_final); */
     cudaFree(d_heat);
     cudaFree(d_heat2);
     return 0;

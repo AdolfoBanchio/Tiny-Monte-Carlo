@@ -11,20 +11,22 @@
 __constant__ float d_albedo;
 __constant__ float d_shells_per_mfp;
 
-// Device function for random number generation
-__device__ float get_random(curandState* state) {
-    return curand_uniform(state);
+// Initialize random number generator state for each photon
+__global__ void init_rng_kernel(curandState *states, unsigned long seed) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid < PHOTONS) {
+        curand_init(seed, tid, 0, &states[tid]);
+    }
 }
 
 // Device function for photon simulation
-__global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n_photons, unsigned long long seed) {
+__global__ void photon_kernel(float* heats, float* heats_squared,curandState* states) {
     // Calculate thread index
     unsigned int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    if (tid >= n_photons) return;
+    if (tid >= PHOTONS) return;
 
     // Initialize random state
-    curandState state;
-    curand_init(seed + tid, 0, 0, &state);
+    curandState state = states[tid];
 
     float* heat_tid = heats +(size_t)SHELLS* (size_t)tid;
     float* heat2_tid = heats_squared +(size_t)SHELLS*(size_t)tid;
@@ -39,7 +41,7 @@ __global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n
     float weight = 1.0f;
     
     for (;;) {
-        float t = -logf(get_random(&state)); /* move */
+        float t = -logf(curand_uniform(&state)); /* move */
         x += t * u;
         y += t * v;
         z += t * w;
@@ -59,8 +61,8 @@ __global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n
         /* New direction, rejection method */
         float xi1, xi2;
         do {
-            xi1 = 2.0f * get_random(&state) - 1.0f;
-            xi2 = 2.0f * get_random(&state) - 1.0f;
+            xi1 = 2.0f * curand_uniform(&state) - 1.0f;
+            xi2 = 2.0f * curand_uniform(&state) - 1.0f;
             t = xi1 * xi1 + xi2 * xi2;
         } while (1.0f < t);
         
@@ -69,11 +71,14 @@ __global__ void photon_kernel(float* heats, float* heats_squared, unsigned int n
         w = xi2 * sqrtf((1.0f - u * u) / t);
 
         if (weight < 0.001f) { /* roulette */
-            if (get_random(&state) > 0.1f)
+            if (curand_uniform(&state) > 0.1f)
                 break;
             weight /= 0.1f;
         }
     }
+
+    // Store the final state back to the states array
+    states[tid] = state;
 }
 
 // Host function to initialize device constants
