@@ -37,8 +37,10 @@ int main(void)
 
     // Allocate host memory
     int n_photons = PHOTONS;  
-    float* h_heat = (float*)malloc(n_photons * SHELLS * sizeof(float));
-    float* h_heat2 = (float*)malloc(n_photons* SHELLS * sizeof(float));
+    size_t total_size = SHELLS * sizeof(float);
+
+    float* h_heat = (float*)malloc(total_size);
+    float* h_heat2 = (float*)malloc(total_size);
     
     // Initialize host arrays
     for (int i = 0; i < SHELLS; i++) {
@@ -46,14 +48,14 @@ int main(void)
         h_heat2[i] = 0.0f;
     }
 
-    // Allocate device memory/
+    // Allocate device memory for heat and heat squared arrays
     float* d_heat;
     float* d_heat2;
     
+    // allocate device memory for random number generator states (one per photon)
     curandState* d_states;
     cudaMalloc(&d_states, n_photons * sizeof(curandState));
 
-    size_t total_size = (size_t)n_photons * SHELLS * sizeof(float);
     cudaMalloc(&d_heat,  total_size);
     cudaMalloc(&d_heat2, total_size);
 	 
