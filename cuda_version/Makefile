@@ -4,7 +4,10 @@ NVCC_FLAGS = -O3 -arch=sm_60
 SRC_DIR = src
 INCLUDE_DIR = include
 BUILD_DIR = build
-
+PHOTONS ?= 32768 # Number of photons to simulate
+# You can change the number of photons by modifying the PHOTONS variable
+# or passing it as a command line argument to the Makefile.
+# Example: make PHOTONS=65536
 SRCS = $(wildcard $(SRC_DIR)/*.cu)
 OBJS = $(SRCS:$(SRC_DIR)/%.cu=$(BUILD_DIR)/%.o)
 
@@ -21,7 +24,7 @@ $(TARGET): $(OBJS)
 	$(NVCC) $(NVCC_FLAGS) -o $@ $^
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cu
-	$(NVCC) $(NVCC_FLAGS) -I$(INCLUDE_DIR) -c $< -o $@
+	$(NVCC) $(NVCC_FLAGS) -I$(INCLUDE_DIR) -DPHOTONS=$(PHOTONS) -c $< -o $@
 
 clean:
 	rm -rf $(BUILD_DIR) $(TARGET)
