@@ -9,7 +9,6 @@ import re
 import subprocess
 import csv
 import platform
-import numpy as np
 
 class TinyMcRunner:
     def __init__(self, case, n_runs, photons=32, thr_per_block=32, output_dir='./results'):
@@ -90,7 +89,7 @@ def run_weak_scaling():
 
 if __name__ == "__main__":
     print("Running strong scaling analysis...")
-    #run_strong_scaling()
+    run_strong_scaling()
     print("Running weak scaling analysis...")
-    run_weak_scaling()
+    #run_weak_scaling()
 
