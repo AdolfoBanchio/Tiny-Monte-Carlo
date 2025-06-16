@@ -53,11 +53,8 @@ __global__ void photon_kernel(float* heats, float* heats_squared,curandState* st
         y += t * v;
         z += t * w;
 
-        unsigned int shell = sqrtf(x * x + y * y + z * z) * d_shells_per_mfp; /* absorb */
-        if (shell > SHELLS - 1) {
-            shell = SHELLS - 1;
-        }
-        
+        unsigned int shell =fminf(sqrtf(x * x + y * y + z * z) * d_shells_per_mfp, SHELLS-1); /* absorb */
+            
         // Use atomic operations for thread-safe updates
         float deposit = (1.0f - d_albedo) * weight;
         atomicAdd(&block_heat[shell], deposit);
