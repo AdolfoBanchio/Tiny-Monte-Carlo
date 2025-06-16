@@ -5,6 +5,7 @@ SRC_DIR = src
 INCLUDE_DIR = include
 BUILD_DIR = build
 PHOTONS ?= 32768 # Number of photons to simulate
+N_THREADS ?= 128 # Number of threads per block
 # You can change the number of photons by modifying the PHOTONS variable
 # or passing it as a command line argument to the Makefile.
 # Example: make PHOTONS=65536
@@ -24,7 +25,7 @@ $(TARGET): $(OBJS)
 	$(NVCC) $(NVCC_FLAGS) -o $@ $^
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cu
-	$(NVCC) $(NVCC_FLAGS) -I$(INCLUDE_DIR) -DPHOTONS=$(PHOTONS) -c $< -o $@
+	$(NVCC) $(NVCC_FLAGS) -I$(INCLUDE_DIR) -DPHOTONS=$(PHOTONS) -DTHREADS_PER_BLOCK=$(N_THREADS) -c $< -o $@
 
 clean:
 	rm -rf $(BUILD_DIR) $(TARGET)
