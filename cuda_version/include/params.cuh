@@ -26,3 +26,7 @@
 #define SEED (time(NULL)) // random seed
 #endif
 
+#ifndef THREADS_PER_BLOCK
+#define THREADS_PER_BLOCK 128 // Number of threads per block
+#endif
+

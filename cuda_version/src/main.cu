@@ -30,10 +30,10 @@ char t3[] = "CPU version, adapted for PEAGPGPU by Gustavo Castellano"
 int main(void)
 {
     // heading
-    printf("# %s\n# %s\n# %s\n", t1, t2, t3);
+   /*  printf("# %s\n# %s\n# %s\n", t1, t2, t3);
     printf("# Scattering = %8.3f/cm\n", MU_S);
-    printf("# Absorption = %8.3f/cm\n", MU_A);
-    printf("# Photons    = %8d\n#\n", PHOTONS);
+    printf("# Absorption = %8.3f/cm\n", MU_A); */
+    printf("# Photons    = %8d\n", PHOTONS);
 
     // Allocate host memory
     int n_photons = PHOTONS;  
@@ -70,7 +70,7 @@ int main(void)
 
     // Launch simulation
     // Calculate grid and block dimensions
-    int threadsPerBlock = 256;
+    int threadsPerBlock = THREADS_PER_BLOCK;
     int blocksPerGrid = (n_photons + threadsPerBlock - 1) / threadsPerBlock;
     
     // Initialize random number generator states
@@ -84,7 +84,6 @@ int main(void)
     }
 
     // If succes, Launch kernel
-    unsigned long long seed = SEED;
     photon_kernel<<<blocksPerGrid, threadsPerBlock>>>(d_heat, d_heat2, d_states);
     
     // Check for errors
@@ -105,27 +104,12 @@ int main(void)
     // Copy results back to host
     cudaMemcpy(h_heat,  d_heat, total_size, cudaMemcpyDeviceToHost);
     cudaMemcpy(h_heat2, d_heat2, total_size,cudaMemcpyDeviceToHost);
-    
-    //Reducction of the sum
-	/* float* h_heat_final  = (float*)malloc(SHELLS * sizeof(float));
-	float* h2_heat_final = (float*)malloc(SHELLS * sizeof(float));
-	for (int s = 0; s < SHELLS; ++s) {
-    		double sum1 = 0, sum2 = 0;
-    		for (int t = 0; t < n_photons; ++t) {
-        		size_t idx = (size_t)t * SHELLS + s;
-        		sum1 += h_heat[idx];
-        		sum2 += h_heat2[idx];
-    		}
-    	h_heat_final[s]  = (float)sum1;
-    	h2_heat_final[s] = (float)sum2;
-	} */
-   
      
-    printf("# %lf seconds\n", elapsed);
+    //printf("# %lf seconds\n", elapsed);
     printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
 
-    printf("# Radius\tHeat\n");
-    printf("# [microns]\t[W/cm^3]\tError\n");
+    //printf("# Radius\tHeat\n");
+    //printf("# [microns]\t[W/cm^3]\tError\n");
     /*
     float t = 4.0f * M_PI * powf(MICRONS_PER_SHELL, 3.0f) * PHOTONS / 1e12;
     for (unsigned int i = 0; i < SHELLS - 1; ++i) {
@@ -134,13 +118,11 @@ int main(void)
                sqrt(h_heat2[i] - h_heat[i] * h_heat[i] / PHOTONS) / t / (i * i + i + 1.0f / 3.0f));
     }
     */
-    printf("# extra\t%12.5f\n", h_heat[SHELLS - 1] / PHOTONS);
+    //printf("# extra\t%12.5f\n", h_heat[SHELLS - 1] / PHOTONS);
 
     // Free memory
     free(h_heat);
     free(h_heat2);
-    /* free(h_heat_final);
-    free(h2_heat_final); */
     cudaFree(d_heat);
     cudaFree(d_heat2);
     return 0;
