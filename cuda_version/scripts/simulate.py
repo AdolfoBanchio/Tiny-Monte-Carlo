@@ -89,7 +89,7 @@ def run_weak_scaling():
 
 if __name__ == "__main__":
     print("Running strong scaling analysis...")
-    #run_strong_scaling()
+    run_strong_scaling()
     print("Running weak scaling analysis...")
     run_weak_scaling()
 
