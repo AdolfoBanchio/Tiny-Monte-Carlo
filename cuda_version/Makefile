@@ -29,3 +29,4 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cu
 
 clean:
 	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf scripts/results/*txt

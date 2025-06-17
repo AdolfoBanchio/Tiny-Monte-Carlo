@@ -66,7 +66,12 @@ def plot_strong_scaling(results_dir, output_path):
     data = {}
     devices = get_devices_from_dir(results_dir) 
     for dev in devices: 
+        files = []
+        data = {}
+        # Filter files for the current device
+        print(f"Processing device: {dev}")
         files = [f for f in os.listdir(results_dir) if f.endswith('.csv') and f.split('_')[1] == dev]
+        print(f"Found {len(files)} files for device {dev}")
         for f in files:
             photons = get_photons_from_filename(f)
             threads = get_threads_from_filename(f)
@@ -90,7 +95,8 @@ def plot_strong_scaling(results_dir, output_path):
         ax.grid(True)
         ax.set_xlabel('Number of Threads')
         plt.tight_layout()
-        fig.savefig(f"{dev}_{output_path}")
+        fig.savefig(f"{output_path}/{dev}_strong_scaling.png")
+        plt.close(fig)
 
 def plot_weak_scaling(results_dir, output_path):
     """
@@ -99,8 +105,10 @@ def plot_weak_scaling(results_dir, output_path):
     vals = []
     sizes = []
     devices = get_devices_from_dir(results_dir) 
-    print(devices)
     for dev in devices:
+        files = []
+        vals = []
+        sizes = []
         files = [f for f in os.listdir(results_dir) if f.endswith('.csv') and f.split('_')[1] == dev]
         for f in files:
             threads = get_threads_from_filename(f)
@@ -122,14 +130,14 @@ def plot_weak_scaling(results_dir, output_path):
             ax.grid(True)
             ax.set_xlabel('Number of Threads')
             plt.tight_layout()
-            plt.savefig(f"{dev}_{output_path}")
+            plt.savefig(f"{output_path}/{dev}_weak_scaling.png")
             plt.close()
 
 if __name__ == "__main__":
     # Adjust these paths as needed
     strong_dir = './results/strong_scaling'
     weak_dir = './results/weak_scaling'
-    plot_strong_scaling(strong_dir, 'strong_scaling.png')
-    #plot_weak_scaling(weak_dir, 'weak_scaling.png')
+    plot_strong_scaling(strong_dir, 'graphics/')
+    plot_weak_scaling(weak_dir, 'graphics/')
     print('Plots saved as strong_scaling.png and weak_scaling.png')
 
